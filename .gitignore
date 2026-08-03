@@ -34,3 +34,9 @@ build/
 .vscode/
 !.vscode/
 !.vscode/extensions.json
+
+### Local environment and secrets ###
+.env
+.env.*
+src/main/resources/application-local.properties
+*.log
