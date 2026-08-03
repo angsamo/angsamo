@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.angsamo.erp.development.mapper.ItemMapper">
+
+    <select id="findAll"
+            resultType="com.angsamo.erp.development.domain.Item">
+        SELECT
+            item_code,
+            item_name,
+            spec,
+            material,
+            make_spec,
+            drawing_ref,
+            created_at,
+            updated_at
+        FROM item
+        ORDER BY item_code
+    </select>
+
+    <select id="findByItemCode"
+            parameterType="string"
+            resultType="com.angsamo.erp.development.domain.Item">
+        SELECT
+            item_code,
+            item_name,
+            spec,
+            material,
+            make_spec,
+            drawing_ref,
+            created_at,
+            updated_at
+        FROM item
+        WHERE item_code = #{itemCode}
+    </select>
+    <insert id="insert">
+
+      INSERT INTO item
+       (
+          item_code,
+          item_name,
+          spec,
+          material,
+          make_spec,
+          drawing_ref
+      )
+      VALUES
+      (
+          #{itemCode},
+          #{itemName},
+          #{spec},
+          #{material},
+          #{makeSpec},
+          #{drawingRef}
+      )
+
+    </insert>
+    
+    <update id="update">
+
+    UPDATE item
+       SET item_name = #{itemName},
+           spec = #{spec},
+           material = #{material},
+           make_spec = #{makeSpec},
+           drawing_ref = #{drawingRef}
+     WHERE item_code = #{itemCode}
+
+</update>
+
+<delete id="deleteByItemCode">
+    DELETE FROM item
+    WHERE item_code = #{itemCode}
+</delete>
+</mapper>

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.angsamo.erp.development.mapper.BomMapper">
+
+    <select id="findAll"
+            resultType="com.angsamo.erp.development.domain.Bom">
+        SELECT
+            b.bom_id,
+            b.parent_item_code,
+            b.component_item_code,
+            b.required_qty,
+            b.unit,
+            b.active,
+            b.created_at,
+            b.updated_at,
+            parent_item.item_name AS parent_item_name,
+            component_item.item_name AS component_item_name
+        FROM bom b
+        JOIN item parent_item
+          ON parent_item.item_code = b.parent_item_code
+        JOIN item component_item
+          ON component_item.item_code = b.component_item_code
+        ORDER BY b.bom_id
+    </select>
+
+    <select id="findByBomId"
+            parameterType="long"
+            resultType="com.angsamo.erp.development.domain.Bom">
+        SELECT
+            b.bom_id,
+            b.parent_item_code,
+            b.component_item_code,
+            b.required_qty,
+            b.unit,
+            b.active,
+            b.created_at,
+            b.updated_at,
+            parent_item.item_name AS parent_item_name,
+            component_item.item_name AS component_item_name
+        FROM bom b
+        JOIN item parent_item
+          ON parent_item.item_code = b.parent_item_code
+        JOIN item component_item
+          ON component_item.item_code = b.component_item_code
+        WHERE b.bom_id = #{bomId}
+    </select>
+
+    <insert id="insert"
+            useGeneratedKeys="true"
+            keyProperty="bomId">
+        INSERT INTO bom (
+            parent_item_code,
+            component_item_code,
+            required_qty,
+            unit,
+            active
+        )
+        VALUES (
+            #{parentItemCode},
+            #{componentItemCode},
+            #{requiredQty},
+            #{unit},
+            #{active}
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE bom
+        SET parent_item_code = #{parentItemCode},
+            component_item_code = #{componentItemCode},
+            required_qty = #{requiredQty},
+            unit = #{unit},
+            active = #{active}
+        WHERE bom_id = #{bomId}
+    </update>
+
+    <delete id="deleteByBomId">
+        DELETE FROM bom
+        WHERE bom_id = #{bomId}
+    </delete>
+
+</mapper>
