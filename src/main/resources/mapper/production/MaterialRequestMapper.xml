@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.angsamo.erp.production.mapper.MaterialRequestMapper">
+
+    <select id="findAll"
+            resultType="com.angsamo.erp.production.domain.MaterialRequest">
+
+        SELECT
+
+            mr.request_id,
+            mr.production_plan_id,
+            mr.department_id,
+            mr.item_id,
+            mr.request_qty,
+            mr.issued_qty,
+            mr.required_date,
+            mr.status,
+            mr.requested_by,
+            mr.processed_by,
+            mr.issued_at,
+            mr.created_at,
+            mr.updated_at,
+
+            i.item_code,
+            i.item_name,
+
+            d.department_name,
+
+            requester.user_name AS requested_by_name,
+            processor.user_name AS processed_by_name
+
+        FROM material_request mr
+
+        JOIN item i
+          ON i.item_id = mr.item_id
+
+        JOIN department d
+          ON d.department_id = mr.department_id
+
+        JOIN app_user requester
+          ON requester.user_id = mr.requested_by
+
+        LEFT JOIN app_user processor
+          ON processor.user_id = mr.processed_by
+
+        ORDER BY
+            mr.request_id DESC
+
+    </select>
+
+</mapper>

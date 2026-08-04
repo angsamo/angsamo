@@ -6,25 +6,24 @@ import java.time.LocalDateTime;
 public class Bom {
 
     private Long bomId;
-
-    private String parentItemCode;
-
-    private String componentItemCode;
-
+    private Long parentItemId;
+    private Long componentItemId;
     private BigDecimal requiredQty;
-
-    private String unit;
-
-    private Integer active;
-
     private LocalDateTime createdAt;
-
     private LocalDateTime updatedAt;
 
-    // JOIN용
+    /*
+     * item 테이블 JOIN 결과 표시용 필드
+     * bom 테이블의 실제 컬럼은 아니다.
+     */
+    private String parentItemCode;
     private String parentItemName;
-
+    private String componentItemCode;
     private String componentItemName;
+    private String componentUnit;
+
+    public Bom() {
+    }
 
     public Long getBomId() {
         return bomId;
@@ -34,20 +33,20 @@ public class Bom {
         this.bomId = bomId;
     }
 
-    public String getParentItemCode() {
-        return parentItemCode;
+    public Long getParentItemId() {
+        return parentItemId;
     }
 
-    public void setParentItemCode(String parentItemCode) {
-        this.parentItemCode = parentItemCode;
+    public void setParentItemId(Long parentItemId) {
+        this.parentItemId = parentItemId;
     }
 
-    public String getComponentItemCode() {
-        return componentItemCode;
+    public Long getComponentItemId() {
+        return componentItemId;
     }
 
-    public void setComponentItemCode(String componentItemCode) {
-        this.componentItemCode = componentItemCode;
+    public void setComponentItemId(Long componentItemId) {
+        this.componentItemId = componentItemId;
     }
 
     public BigDecimal getRequiredQty() {
@@ -56,22 +55,6 @@ public class Bom {
 
     public void setRequiredQty(BigDecimal requiredQty) {
         this.requiredQty = requiredQty;
-    }
-
-    public String getUnit() {
-        return unit;
-    }
-
-    public void setUnit(String unit) {
-        this.unit = unit;
-    }
-
-    public Integer getActive() {
-        return active;
-    }
-
-    public void setActive(Integer active) {
-        this.active = active;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -90,12 +73,28 @@ public class Bom {
         this.updatedAt = updatedAt;
     }
 
+    public String getParentItemCode() {
+        return parentItemCode;
+    }
+
+    public void setParentItemCode(String parentItemCode) {
+        this.parentItemCode = parentItemCode;
+    }
+
     public String getParentItemName() {
         return parentItemName;
     }
 
     public void setParentItemName(String parentItemName) {
         this.parentItemName = parentItemName;
+    }
+
+    public String getComponentItemCode() {
+        return componentItemCode;
+    }
+
+    public void setComponentItemCode(String componentItemCode) {
+        this.componentItemCode = componentItemCode;
     }
 
     public String getComponentItemName() {
@@ -106,4 +105,28 @@ public class Bom {
         this.componentItemName = componentItemName;
     }
 
+    public String getComponentUnit() {
+        return componentUnit;
+    }
+
+    public void setComponentUnit(String componentUnit) {
+        this.componentUnit = componentUnit;
+    }
+
+    @Override
+    public String toString() {
+        return "Bom{" +
+                "bomId=" + bomId +
+                ", parentItemId=" + parentItemId +
+                ", componentItemId=" + componentItemId +
+                ", requiredQty=" + requiredQty +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                ", parentItemCode='" + parentItemCode + '\'' +
+                ", parentItemName='" + parentItemName + '\'' +
+                ", componentItemCode='" + componentItemCode + '\'' +
+                ", componentItemName='" + componentItemName + '\'' +
+                ", componentUnit='" + componentUnit + '\'' +
+                '}';
+    }
 }

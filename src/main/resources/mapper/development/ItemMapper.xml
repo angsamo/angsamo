@@ -9,70 +9,104 @@
     <select id="findAll"
             resultType="com.angsamo.erp.development.domain.Item">
         SELECT
+            item_id,
             item_code,
             item_name,
+            item_type,
             spec,
-            material,
-            make_spec,
-            drawing_ref,
+            unit,
+            standard_price,
+            description,
+            active,
             created_at,
             updated_at
         FROM item
-        ORDER BY item_code
+        ORDER BY item_id DESC
+    </select>
+
+    <select id="findByItemId"
+            parameterType="long"
+            resultType="com.angsamo.erp.development.domain.Item">
+        SELECT
+            item_id,
+            item_code,
+            item_name,
+            item_type,
+            spec,
+            unit,
+            standard_price,
+            description,
+            active,
+            created_at,
+            updated_at
+        FROM item
+        WHERE item_id = #{itemId}
     </select>
 
     <select id="findByItemCode"
             parameterType="string"
             resultType="com.angsamo.erp.development.domain.Item">
         SELECT
+            item_id,
             item_code,
             item_name,
+            item_type,
             spec,
-            material,
-            make_spec,
-            drawing_ref,
+            unit,
+            standard_price,
+            description,
+            active,
             created_at,
             updated_at
         FROM item
         WHERE item_code = #{itemCode}
     </select>
-    <insert id="insert">
 
-      INSERT INTO item
-       (
-          item_code,
-          item_name,
-          spec,
-          material,
-          make_spec,
-          drawing_ref
-      )
-      VALUES
-      (
-          #{itemCode},
-          #{itemName},
-          #{spec},
-          #{material},
-          #{makeSpec},
-          #{drawingRef}
-      )
-
+    <insert id="insert"
+            parameterType="com.angsamo.erp.development.domain.Item"
+            useGeneratedKeys="true"
+            keyProperty="itemId"
+            keyColumn="item_id">
+        INSERT INTO item (
+            item_code,
+            item_name,
+            item_type,
+            spec,
+            unit,
+            standard_price,
+            description,
+            active
+        )
+        VALUES (
+            #{itemCode},
+            #{itemName},
+            #{itemType},
+            #{spec},
+            #{unit},
+            #{standardPrice},
+            #{description},
+            #{active}
+        )
     </insert>
-    
-    <update id="update">
 
-    UPDATE item
-       SET item_name = #{itemName},
-           spec = #{spec},
-           material = #{material},
-           make_spec = #{makeSpec},
-           drawing_ref = #{drawingRef}
-     WHERE item_code = #{itemCode}
+    <update id="update"
+            parameterType="com.angsamo.erp.development.domain.Item">
+        UPDATE item
+        SET
+            item_name = #{itemName},
+            item_type = #{itemType},
+            spec = #{spec},
+            unit = #{unit},
+            standard_price = #{standardPrice},
+            description = #{description},
+            active = #{active}
+        WHERE item_id = #{itemId}
+    </update>
 
-</update>
+    <delete id="deleteByItemId"
+            parameterType="long">
+        DELETE FROM item
+        WHERE item_id = #{itemId}
+    </delete>
 
-<delete id="deleteByItemCode">
-    DELETE FROM item
-    WHERE item_code = #{itemCode}
-</delete>
 </mapper>

@@ -10,14 +10,11 @@ import com.angsamo.erp.development.domain.Bom;
 @Mapper
 public interface BomMapper {
 
+    // 전체 BOM 목록 조회
     List<Bom> findAll();
 
-    Bom findByBomId(@Param("bomId") Long bomId);
-
-    void insert(Bom bom);
-
-    void update(Bom bom);
-
-    int deleteByBomId(@Param("bomId") Long bomId);
-
+    // 완제품별 BOM 구성 자재 조회
+    List<Bom> findByParentItemId(
+            @Param("parentItemId") Long parentItemId
+    );
 }

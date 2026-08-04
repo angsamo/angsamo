@@ -12,11 +12,13 @@ public interface ItemMapper {
 
     List<Item> findAll();
 
+    Item findByItemId(@Param("itemId") Long itemId);
+
     Item findByItemCode(@Param("itemCode") String itemCode);
-    
-    void insert(Item item);
-    
-    void update(Item item);
-    
-    int deleteByItemCode(@Param("itemCode") String itemCode);
+
+    int insert(Item item);
+
+    int update(Item item);
+
+    int deleteByItemId(@Param("itemId") Long itemId);
 }

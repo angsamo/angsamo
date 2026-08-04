@@ -1,39 +1,34 @@
 package com.angsamo.erp.development.domain;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class Item {
 
+    private Long itemId;
     private String itemCode;
     private String itemName;
+    private String itemType;
     private String spec;
-    private String material;
-    private String makeSpec;
-    private String drawingRef;
+    private String unit;
+    private BigDecimal standardPrice;
+    private String description;
+    private Integer active;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public Item() {
     }
-    
-    
 
-    public Item(String itemCode, String itemName, String spec, String material, String makeSpec, String drawingRef,
-			LocalDateTime createdAt, LocalDateTime updatedAt) {
-		super();
-		this.itemCode = itemCode;
-		this.itemName = itemName;
-		this.spec = spec;
-		this.material = material;
-		this.makeSpec = makeSpec;
-		this.drawingRef = drawingRef;
-		this.createdAt = createdAt;
-		this.updatedAt = updatedAt;
-	}
+    public Long getItemId() {
+        return itemId;
+    }
 
+    public void setItemId(Long itemId) {
+        this.itemId = itemId;
+    }
 
-
-	public String getItemCode() {
+    public String getItemCode() {
         return itemCode;
     }
 
@@ -49,6 +44,14 @@ public class Item {
         this.itemName = itemName;
     }
 
+    public String getItemType() {
+        return itemType;
+    }
+
+    public void setItemType(String itemType) {
+        this.itemType = itemType;
+    }
+
     public String getSpec() {
         return spec;
     }
@@ -57,28 +60,36 @@ public class Item {
         this.spec = spec;
     }
 
-    public String getMaterial() {
-        return material;
+    public String getUnit() {
+        return unit;
     }
 
-    public void setMaterial(String material) {
-        this.material = material;
+    public void setUnit(String unit) {
+        this.unit = unit;
     }
 
-    public String getMakeSpec() {
-        return makeSpec;
+    public BigDecimal getStandardPrice() {
+        return standardPrice;
     }
 
-    public void setMakeSpec(String makeSpec) {
-        this.makeSpec = makeSpec;
+    public void setStandardPrice(BigDecimal standardPrice) {
+        this.standardPrice = standardPrice;
     }
 
-    public String getDrawingRef() {
-        return drawingRef;
+    public String getDescription() {
+        return description;
     }
 
-    public void setDrawingRef(String drawingRef) {
-        this.drawingRef = drawingRef;
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Integer getActive() {
+        return active;
+    }
+
+    public void setActive(Integer active) {
+        this.active = active;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -97,14 +108,20 @@ public class Item {
         this.updatedAt = updatedAt;
     }
 
-
-
-	@Override
-	public String toString() {
-		return "Item [itemCode=" + itemCode + ", itemName=" + itemName + ", spec=" + spec + ", material=" + material
-				+ ", makeSpec=" + makeSpec + ", drawingRef=" + drawingRef + ", createdAt=" + createdAt + ", updatedAt="
-				+ updatedAt + "]";
-	}
-    
-    
+    @Override
+    public String toString() {
+        return "Item{" +
+                "itemId=" + itemId +
+                ", itemCode='" + itemCode + '\'' +
+                ", itemName='" + itemName + '\'' +
+                ", itemType='" + itemType + '\'' +
+                ", spec='" + spec + '\'' +
+                ", unit='" + unit + '\'' +
+                ", standardPrice=" + standardPrice +
+                ", description='" + description + '\'' +
+                ", active=" + active +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                '}';
+    }
 }

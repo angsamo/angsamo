@@ -6,81 +6,88 @@
 
 <mapper namespace="com.angsamo.erp.development.mapper.BomMapper">
 
+    <!-- 전체 BOM 목록 조회 -->
     <select id="findAll"
             resultType="com.angsamo.erp.development.domain.Bom">
+
         SELECT
             b.bom_id,
-            b.parent_item_code,
-            b.component_item_code,
+            b.parent_item_id,
+            b.component_item_id,
             b.required_qty,
-            b.unit,
-            b.active,
             b.created_at,
             b.updated_at,
-            parent_item.item_name AS parent_item_name,
-            component_item.item_name AS component_item_name
+
+            parent_item.item_code
+                AS parent_item_code,
+
+            parent_item.item_name
+                AS parent_item_name,
+
+            component_item.item_code
+                AS component_item_code,
+
+            component_item.item_name
+                AS component_item_name,
+
+            component_item.unit
+                AS component_unit
+
         FROM bom b
+
         JOIN item parent_item
-          ON parent_item.item_code = b.parent_item_code
+          ON parent_item.item_id = b.parent_item_id
+
         JOIN item component_item
-          ON component_item.item_code = b.component_item_code
-        ORDER BY b.bom_id
+          ON component_item.item_id = b.component_item_id
+
+        ORDER BY
+            parent_item.item_code,
+            component_item.item_code
+
     </select>
 
-    <select id="findByBomId"
+
+    <!-- 특정 완제품의 BOM 구성 자재 조회 -->
+    <select id="findByParentItemId"
             parameterType="long"
             resultType="com.angsamo.erp.development.domain.Bom">
+
         SELECT
             b.bom_id,
-            b.parent_item_code,
-            b.component_item_code,
+            b.parent_item_id,
+            b.component_item_id,
             b.required_qty,
-            b.unit,
-            b.active,
             b.created_at,
             b.updated_at,
-            parent_item.item_name AS parent_item_name,
-            component_item.item_name AS component_item_name
+
+            parent_item.item_code
+                AS parent_item_code,
+
+            parent_item.item_name
+                AS parent_item_name,
+
+            component_item.item_code
+                AS component_item_code,
+
+            component_item.item_name
+                AS component_item_name,
+
+            component_item.unit
+                AS component_unit
+
         FROM bom b
+
         JOIN item parent_item
-          ON parent_item.item_code = b.parent_item_code
+          ON parent_item.item_id = b.parent_item_id
+
         JOIN item component_item
-          ON component_item.item_code = b.component_item_code
-        WHERE b.bom_id = #{bomId}
+          ON component_item.item_id = b.component_item_id
+
+        WHERE b.parent_item_id = #{parentItemId}
+
+        ORDER BY component_item.item_code
+
     </select>
-
-    <insert id="insert"
-            useGeneratedKeys="true"
-            keyProperty="bomId">
-        INSERT INTO bom (
-            parent_item_code,
-            component_item_code,
-            required_qty,
-            unit,
-            active
-        )
-        VALUES (
-            #{parentItemCode},
-            #{componentItemCode},
-            #{requiredQty},
-            #{unit},
-            #{active}
-        )
-    </insert>
-
-    <update id="update">
-        UPDATE bom
-        SET parent_item_code = #{parentItemCode},
-            component_item_code = #{componentItemCode},
-            required_qty = #{requiredQty},
-            unit = #{unit},
-            active = #{active}
-        WHERE bom_id = #{bomId}
-    </update>
-
-    <delete id="deleteByBomId">
-        DELETE FROM bom
-        WHERE bom_id = #{bomId}
-    </delete>
 
 </mapper>

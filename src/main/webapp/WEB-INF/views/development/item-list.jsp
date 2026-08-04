@@ -51,8 +51,42 @@
             font-weight: 600;
         }
 
+        .state-badge {
+            display: inline-flex;
+            min-width: 52px;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 9px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .state-badge.enabled {
+            color: #14653f;
+            background: #ddf4e7;
+        }
+
+        .state-badge.disabled {
+            color: #9f1d1d;
+            background: #fff0f0;
+        }
+
+        .type-badge {
+            display: inline-flex;
+            min-width: 62px;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 9px;
+            color: #155cb2;
+            background: #e2efff;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
         .empty-state {
-            padding: 44px 20px;
+            padding: 48px 20px;
             color: var(--muted);
             text-align: center;
         }
@@ -91,8 +125,7 @@
                 <p class="eyebrow">DEVELOPMENT</p>
                 <h1>품목 관리</h1>
                 <p>
-                    생산과 BOM에서 사용하는 품목 정보를
-                    조회하고 관리합니다.
+                    완제품과 자재의 품목 기준정보를 조회하고 관리합니다.
                 </p>
             </div>
 
@@ -152,15 +185,15 @@
                     <div class="table-scroll">
 
                         <table class="data-table">
-
                             <thead>
                                 <tr>
                                     <th>품목코드</th>
                                     <th>품목명</th>
+                                    <th>품목 유형</th>
                                     <th>규격</th>
-                                    <th>재질</th>
-                                    <th>제작 사양</th>
-                                    <th>도면 참조</th>
+                                    <th>단위</th>
+                                    <th>기준 단가</th>
+                                    <th>사용 여부</th>
                                     <th>상세</th>
                                 </tr>
                             </thead>
@@ -171,31 +204,65 @@
 
                                     <tr>
                                         <td>${item.itemCode}</td>
+
                                         <td>${item.itemName}</td>
+
+                                        <td>
+                                            <span class="type-badge">
+                                                <c:choose>
+                                                    <c:when test="${item.itemType == 'PRODUCT'}">
+                                                        완제품
+                                                    </c:when>
+
+                                                    <c:when test="${item.itemType == 'MATERIAL'}">
+                                                        자재
+                                                    </c:when>
+
+                                                    <c:otherwise>
+                                                        ${item.itemType}
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </span>
+                                        </td>
 
                                         <td>
                                             <c:out value="${item.spec}"
                                                    default="-" />
                                         </td>
 
+                                        <td>${item.unit}</td>
+
                                         <td>
-                                            <c:out value="${item.material}"
-                                                   default="-" />
+                                            <c:choose>
+                                                <c:when test="${empty item.standardPrice}">
+                                                    -
+                                                </c:when>
+
+                                                <c:otherwise>
+                                                    ${item.standardPrice}
+                                                </c:otherwise>
+                                            </c:choose>
                                         </td>
 
                                         <td>
-                                            <c:out value="${item.makeSpec}"
-                                                   default="-" />
-                                        </td>
+                                            <c:choose>
+                                                <c:when test="${item.active == 1}">
+                                                    <span class="state-badge enabled">
+                                                        사용
+                                                    </span>
+                                                </c:when>
 
-                                        <td>
-                                            <c:out value="${item.drawingRef}"
-                                                   default="-" />
+                                                <c:otherwise>
+                                                    <span class="state-badge disabled">
+                                                        미사용
+                                                    </span>
+                                                </c:otherwise>
+                                            </c:choose>
                                         </td>
 
                                         <td>
                                             <a class="table-link"
-                                               href="${pageContext.request.contextPath}/development/items/${item.itemCode}">
+                                               href="${pageContext.request.contextPath}/development/items/${item.itemId}">
                                                 상세보기
                                             </a>
                                         </td>
@@ -203,7 +270,6 @@
 
                                 </c:forEach>
                             </tbody>
-
                         </table>
 
                     </div>

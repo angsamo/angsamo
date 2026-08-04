@@ -3,13 +3,14 @@ package com.angsamo.erp.development.controller;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 import com.angsamo.erp.development.domain.Item;
 import com.angsamo.erp.development.service.ItemService;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/development/items")
@@ -28,74 +29,146 @@ public class ItemController {
 
         return "development/item-list";
     }
-    
+
+    // 품목 등록 화면
     @GetMapping("/new")
     public String createForm(Model model) {
-        model.addAttribute("item", new Item());
+        Item item = new Item();
+
+        item.setUnit("EA");
+        item.setActive(1);
+
+        model.addAttribute("item", item);
+
         return "development/item-form";
     }
-    
+
+    // 품목 등록 처리
+    @PostMapping
+    public String create(
+            @ModelAttribute Item item,
+            Model model,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            Long itemId = itemService.insert(item);
+
+            redirectAttributes.addFlashAttribute(
+                    "message",
+                    "품목이 등록되었습니다."
+            );
+
+            return "redirect:/development/items/" + itemId;
+
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            model.addAttribute(
+                    "errorMessage",
+                    e.getMessage()
+            );
+
+            model.addAttribute("item", item);
+
+            return "development/item-form";
+        }
+    }
+
     // 품목 상세
-    @GetMapping("/{itemCode}")
+    @GetMapping("/{itemId}")
     public String detail(
-            @PathVariable String itemCode,
+            @PathVariable Long itemId,
             Model model
     ) {
-        Item item = itemService.findByItemCode(itemCode);
+        Item item = itemService.findByItemId(itemId);
 
         model.addAttribute("item", item);
 
         return "development/item-detail";
     }
-    
-    // 품목 등록 처리
-    @PostMapping
-    public String create(@ModelAttribute Item item) {
-        itemService.insert(item);
-        return "redirect:/development/items";
-    }
-    
-    @GetMapping("/{itemCode}/edit")
+
+    // 품목 수정 화면
+    @GetMapping("/{itemId}/edit")
     public String editForm(
-            @PathVariable String itemCode,
-            Model model
+            @PathVariable Long itemId,
+            Model model,
+            RedirectAttributes redirectAttributes
     ) {
-        Item item = itemService.findByItemCode(itemCode);
+        Item item = itemService.findByItemId(itemId);
+
+        if (item == null) {
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    "수정할 품목을 찾을 수 없습니다."
+            );
+
+            return "redirect:/development/items";
+        }
+
         model.addAttribute("item", item);
 
         return "development/item-edit";
     }
-    
-    @PostMapping("/{itemCode}/edit")
-    public String update(
-            @PathVariable String itemCode,
-            @ModelAttribute Item item
-    ) {
-        item.setItemCode(itemCode);
-        itemService.update(item);
 
-        return "redirect:/development/items/" + itemCode;
-    }
-    
-    @PostMapping("/{itemCode}/delete")
-    public String delete(
-            @PathVariable String itemCode,
+    // 품목 수정 처리
+    @PostMapping("/{itemId}/edit")
+    public String update(
+            @PathVariable Long itemId,
+            @ModelAttribute Item item,
+            Model model,
             RedirectAttributes redirectAttributes
     ) {
         try {
-            boolean deleted = itemService.delete(itemCode);
+            item.setItemId(itemId);
+
+            itemService.update(item);
+
+            redirectAttributes.addFlashAttribute(
+                    "message",
+                    "품목 정보가 수정되었습니다."
+            );
+
+            return "redirect:/development/items/" + itemId;
+
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            Item existingItem = itemService.findByItemId(itemId);
+
+            if (existingItem != null) {
+                item.setItemId(itemId);
+                item.setItemCode(existingItem.getItemCode());
+            }
+
+            model.addAttribute(
+                    "errorMessage",
+                    e.getMessage()
+            );
+
+            model.addAttribute("item", item);
+
+            return "development/item-edit";
+        }
+    }
+
+    // 품목 삭제 처리
+    @PostMapping("/{itemId}/delete")
+    public String delete(
+            @PathVariable Long itemId,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            boolean deleted = itemService.delete(itemId);
 
             if (deleted) {
                 redirectAttributes.addFlashAttribute(
                         "message",
                         "품목이 삭제되었습니다."
                 );
-            } else {
-                redirectAttributes.addFlashAttribute(
-                        "errorMessage",
-                        "삭제할 품목을 찾을 수 없습니다."
-                );
+
+                return "redirect:/development/items";
             }
+
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    "삭제할 품목을 찾을 수 없습니다."
+            );
 
             return "redirect:/development/items";
 
@@ -105,7 +178,7 @@ public class ItemController {
                     e.getMessage()
             );
 
-            return "redirect:/development/items/" + itemCode;
+            return "redirect:/development/items/" + itemId;
         }
     }
 }

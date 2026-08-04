@@ -1,10 +1,12 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
 
     <title>품목 수정</title>
 
@@ -50,9 +52,10 @@
             color: #d42424;
         }
 
-        .form-field input {
+        .form-field input,
+        .form-field select,
+        .form-field textarea {
             width: 100%;
-            height: 42px;
             padding: 0 12px;
             color: var(--text);
             background: var(--white);
@@ -62,11 +65,28 @@
             transition: 150ms ease;
         }
 
-        .form-field input:hover {
+        .form-field input,
+        .form-field select {
+            height: 42px;
+        }
+
+        .form-field textarea {
+            min-height: 120px;
+            padding-top: 11px;
+            padding-bottom: 11px;
+            resize: vertical;
+            font: inherit;
+        }
+
+        .form-field input:hover,
+        .form-field select:hover,
+        .form-field textarea:hover {
             border-color: #aab6c5;
         }
 
-        .form-field input:focus {
+        .form-field input:focus,
+        .form-field select:focus,
+        .form-field textarea:focus {
             border-color: var(--blue);
             box-shadow: 0 0 0 3px rgba(18, 103, 214, 0.12);
         }
@@ -87,6 +107,7 @@
         .form-actions {
             display: flex;
             justify-content: flex-end;
+            align-items: center;
             gap: 10px;
             margin-top: 24px;
             padding-top: 18px;
@@ -110,8 +131,14 @@
 
         .secondary-button:hover {
             color: var(--blue);
-            border-color: var(--blue);
             background: #f8fbff;
+            border-color: var(--blue);
+        }
+
+        .error-notice {
+            color: #9f1d1d;
+            background: #fff0f0;
+            border-color: #f1b8b8;
         }
 
         @media (max-width: 760px) {
@@ -148,9 +175,16 @@
             <div>
                 <p class="eyebrow">DEVELOPMENT</p>
                 <h1>품목 수정</h1>
-                <p>등록된 품목의 명칭, 규격 및 제작 정보를 변경합니다.</p>
+                <p>등록된 품목의 기준정보를 변경합니다.</p>
             </div>
         </section>
+
+        <c:if test="${not empty errorMessage}">
+            <div class="notice error-notice">
+                <span class="material-symbols-outlined">error</span>
+                <p>${errorMessage}</p>
+            </div>
+        </c:if>
 
         <section class="panel form-panel">
 
@@ -161,32 +195,39 @@
                 </div>
             </div>
 
-            <form action="${pageContext.request.contextPath}/development/items/${item.itemCode}/edit"
+            <form action="${pageContext.request.contextPath}/development/items/${item.itemId}/edit"
                   method="post">
 
                 <div class="form-body">
 
                     <div class="notice">
-                        <span class="material-symbols-outlined">
-                            lock
-                        </span>
+                        <span class="material-symbols-outlined">lock</span>
                         <p>
-                            품목코드는 기본키이므로 수정할 수 없습니다.
+                            품목코드는 업무 식별 코드이므로 수정할 수 없습니다.
                         </p>
                     </div>
 
                     <div class="form-grid">
 
                         <div class="form-field">
+                            <label for="itemId">품목 식별번호</label>
+
+                            <input type="text"
+                                   id="itemId"
+                                   value="${item.itemId}"
+                                   readonly>
+                        </div>
+
+                        <div class="form-field">
                             <label for="itemCode">품목코드</label>
 
                             <input type="text"
                                    id="itemCode"
-                                   value="${item.itemCode}"
+                                   value="<c:out value='${item.itemCode}' />"
                                    readonly>
 
                             <p class="field-help">
-                                품목코드는 변경할 수 없습니다.
+                                등록 후 변경할 수 없습니다.
                             </p>
                         </div>
 
@@ -199,8 +240,49 @@
                             <input type="text"
                                    id="itemName"
                                    name="itemName"
-                                   value="${item.itemName}"
+                                   value="<c:out value='${item.itemName}' />"
                                    maxlength="100"
+                                   required>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="itemType">
+                                품목 유형
+                                <span class="required">*</span>
+                            </label>
+
+                            <select id="itemType"
+                                    name="itemType"
+                                    required>
+
+                                <option value="PRODUCT"
+                                    <c:if test="${item.itemType == 'PRODUCT'}">
+                                        selected
+                                    </c:if>>
+                                    완제품
+                                </option>
+
+                                <option value="MATERIAL"
+                                    <c:if test="${item.itemType == 'MATERIAL'}">
+                                        selected
+                                    </c:if>>
+                                    자재
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="unit">
+                                단위
+                                <span class="required">*</span>
+                            </label>
+
+                            <input type="text"
+                                   id="unit"
+                                   name="unit"
+                                   value="<c:out value='${item.unit}' />"
+                                   maxlength="20"
+                                   placeholder="예: EA"
                                    required>
                         </div>
 
@@ -210,38 +292,54 @@
                             <input type="text"
                                    id="spec"
                                    name="spec"
-                                   value="${item.spec}"
+                                   value="<c:out value='${item.spec}' />"
                                    maxlength="200">
                         </div>
 
                         <div class="form-field">
-                            <label for="material">재질</label>
+                            <label for="standardPrice">기준 단가</label>
 
-                            <input type="text"
-                                   id="material"
-                                   name="material"
-                                   value="${item.material}"
-                                   maxlength="100">
+                            <input type="number"
+                                   id="standardPrice"
+                                   name="standardPrice"
+                                   value="${item.standardPrice}"
+                                   min="0"
+                                   step="0.01">
+                        </div>
+
+                        <div class="form-field">
+                            <label for="active">
+                                사용 여부
+                                <span class="required">*</span>
+                            </label>
+
+                            <select id="active"
+                                    name="active"
+                                    required>
+
+                                <option value="1"
+                                    <c:if test="${item.active == 1}">
+                                        selected
+                                    </c:if>>
+                                    사용
+                                </option>
+
+                                <option value="0"
+                                    <c:if test="${item.active == 0}">
+                                        selected
+                                    </c:if>>
+                                    미사용
+                                </option>
+                            </select>
                         </div>
 
                         <div class="form-field full-width">
-                            <label for="makeSpec">제작 사양</label>
+                            <label for="description">추가 설명</label>
 
-                            <input type="text"
-                                   id="makeSpec"
-                                   name="makeSpec"
-                                   value="${item.makeSpec}"
-                                   maxlength="200">
-                        </div>
-
-                        <div class="form-field full-width">
-                            <label for="drawingRef">도면 참조</label>
-
-                            <input type="text"
-                                   id="drawingRef"
-                                   name="drawingRef"
-                                   value="${item.drawingRef}"
-                                   maxlength="200">
+                            <textarea id="description"
+                                      name="description"
+                                      maxlength="500"
+                                      placeholder="재질, 도면, 제작 사양 등 추가 정보를 입력하세요"><c:out value="${item.description}" /></textarea>
                         </div>
 
                     </div>
@@ -249,14 +347,16 @@
                     <div class="form-actions">
 
                         <a class="secondary-button"
-                           href="${pageContext.request.contextPath}/development/items/${item.itemCode}">
+                           href="${pageContext.request.contextPath}/development/items/${item.itemId}">
+
+                            <span class="material-symbols-outlined">close</span>
                             취소
                         </a>
 
-                        <button class="primary-button" type="submit">
-                            <span class="material-symbols-outlined">
-                                save
-                            </span>
+                        <button class="primary-button"
+                                type="submit">
+
+                            <span class="material-symbols-outlined">save</span>
                             변경사항 저장
                         </button>
 
