@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.angsamo.erp.production.mapper.ProductionPlanMapper">
+
+    <select id="findAll"
+            resultType="com.angsamo.erp.production.domain.ProductionPlan">
+
+        SELECT
+
+            pp.production_plan_id,
+            pp.department_id,
+            pp.item_id,
+            pp.production_qty,
+            pp.start_date,
+            pp.due_date,
+            pp.status,
+            pp.created_by,
+            pp.created_at,
+            pp.updated_at,
+
+            i.item_code,
+            i.item_name,
+
+            d.department_name,
+
+            u.user_name AS created_by_name
+
+        FROM production_plan pp
+
+        JOIN item i
+          ON i.item_id = pp.item_id
+
+        JOIN department d
+          ON d.department_id = pp.department_id
+
+        JOIN app_user u
+          ON u.user_id = pp.created_by
+
+        ORDER BY
+            pp.production_plan_id DESC
+
+    </select>
+
+</mapper>
