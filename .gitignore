@@ -1,36 +1,45 @@
-HELP.md
+# Maven / build output
 target/
-/tmp/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+bin/
+build/
 
-### STS ###
-.apt_generated
+# Eclipse / STS
+.metadata/
+.settings/
 .classpath
-.factorypath
 .project
-.settings
+.factorypath
+.apt_generated/
 .springBeans
-.sts4-cache
+.sts4-cache/
+*.launch
 
-### IntelliJ IDEA ###
-.idea
+# IntelliJ IDEA
+.idea/
 *.iws
 *.iml
 *.ipr
 
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
+# VS Code
 .vscode/
-!.vscode/
-!.vscode/extensions.json
+
+# NetBeans
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# Local / temporary files
+tmp/
+HELP.md
+*.class
+*.log
+preinstall-backup-*.zip
+
+# Private project data
+database/
+docs/
+
+# Maven wrapper binary (downloaded automatically)
+.mvn/wrapper/maven-wrapper.jar
