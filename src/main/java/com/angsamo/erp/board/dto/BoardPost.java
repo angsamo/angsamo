@@ -14,7 +14,6 @@ public class BoardPost {
 	private String title;
 	private String content;
 	private Long authorId;
-	private Boolean isNotice;
 	private Integer viewCount;
 	private Boolean active;
 	private LocalDateTime createdAt;

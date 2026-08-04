@@ -1,4 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <header class="topbar">
 	<div class="topbar-left">
 		<button class="icon-button menu-button" id="menuButton" type="button" aria-label="메뉴 열기">
@@ -19,8 +20,8 @@
 		</button>
 		<div class="profile">
 			<div>
-				<strong>최고 관리자</strong>
-				<p>시스템 본부</p>
+				<strong><c:out value="${sessionScope.loginUser.userName}" default="로그인 사용자" /></strong>
+				<p><c:out value="${sessionScope.loginUser.departmentCode}" default="${sessionScope.loginUser.role}" /></p>
 			</div>
 			<span class="avatar material-symbols-outlined">person</span>
 		</div>

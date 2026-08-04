@@ -128,26 +128,14 @@ a {
 }
 
 .submenu {
-	position: fixed;
-	z-index: 70;
-	left: calc(var(--sidebar-width) - 4px);
-	width: 202px;
-	margin-top: -49px;
-	padding: 8px;
-	visibility: hidden;
-	opacity: 0;
-	background: #0d2236;
-	border: 1px solid #274058;
-	border-radius: 7px;
-	box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
-	transform: translateX(-6px);
-	transition: 140ms ease;
+	display: none;
+	margin: -2px 0 6px 38px;
+	padding: 4px 0 4px 8px;
+	border-left: 1px solid #274058;
 }
 
 .nav-group:hover .submenu {
-	visibility: visible;
-	opacity: 1;
-	transform: translateX(0);
+	display: block;
 }
 
 .nav-group:hover .nav-arrow {
@@ -520,6 +508,77 @@ a {
 
 .compact-panel {
 	min-width: 0;
+}
+
+.table-panel {
+	padding: 0;
+}
+
+.table-panel .panel-header {
+	padding: 22px 24px;
+}
+
+.list-count {
+	color: var(--muted);
+	font-size: 14px;
+}
+
+.table-scroll {
+	overflow-x: auto;
+}
+
+.data-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 14px;
+}
+
+.data-table th,
+.data-table td {
+	padding: 14px 18px;
+	border-top: 1px solid var(--border);
+	text-align: left;
+	white-space: nowrap;
+}
+
+.data-table th {
+	color: var(--muted);
+	background: #f5f8fc;
+	font-size: 12px;
+}
+
+.data-table tbody tr:hover {
+	background: #f8fbff;
+}
+
+.role-badge,
+.state-badge {
+	display: inline-flex;
+	padding: 4px 9px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 700;
+}
+
+.role-badge {
+	color: #2159a6;
+	background: #e8f1ff;
+}
+
+.state-badge.enabled {
+	color: #14733d;
+	background: #e5f7ed;
+}
+
+.state-badge.disabled {
+	color: #8a3940;
+	background: #fdebed;
+}
+
+.empty-cell {
+	padding: 48px 18px !important;
+	color: var(--muted);
+	text-align: center !important;
 }
 
 .deadline {
