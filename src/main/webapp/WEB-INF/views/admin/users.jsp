@@ -56,7 +56,7 @@
 									<td>
 										<c:choose>
 											<c:when test="${not empty user.departmentName}"><c:out value="${user.departmentName}" /></c:when>
-											<c:when test="${not empty user.vendorId}">협력업체 <c:out value="${user.vendorId}" /></c:when>
+											<c:when test="${not empty user.vendorName}"><c:out value="${user.vendorName}" /></c:when>
 											<c:otherwise>전체</c:otherwise>
 										</c:choose>
 									</td>

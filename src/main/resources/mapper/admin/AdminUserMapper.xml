@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.angsamo.erp.admin.mapper.AdminUserMapper">
+	<select id="findAll" resultType="com.angsamo.erp.admin.dto.UserListItem">
+		SELECT
+			u.user_id,
+			u.login_id,
+			u.user_name,
+			u.department_id,
+			d.department_code,
+			d.department_name,
+			u.vendor_id,
+			v.vendor_name,
+			u.role,
+			u.active,
+			u.created_at
+		FROM app_user u
+		LEFT JOIN department d ON d.department_id = u.department_id
+		LEFT JOIN vendor v ON v.vendor_id = u.vendor_id
+		ORDER BY u.user_id
+	</select>
+</mapper>

@@ -6,27 +6,27 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.angsamo.erp.admin.service.AdminUserService;
+import com.angsamo.erp.admin.service.AdminDepartmentService;
 import com.angsamo.erp.common.session.LoginUser;
 
 import jakarta.servlet.http.HttpSession;
 
 @Controller
-public class AdminUserController {
-	private final AdminUserService adminUserService;
+public class AdminDepartmentController {
+	private final AdminDepartmentService adminDepartmentService;
 
-	public AdminUserController(AdminUserService adminUserService) {
-		this.adminUserService = adminUserService;
+	public AdminDepartmentController(AdminDepartmentService adminDepartmentService) {
+		this.adminDepartmentService = adminDepartmentService;
 	}
 
-	@GetMapping("/admin/users")
-	public String users(Model model, HttpSession session) {
+	@GetMapping("/admin/departments")
+	public String departments(Model model, HttpSession session) {
 		LoginUser loginUser = (LoginUser) session.getAttribute(LoginUser.SESSION_KEY);
 		if (loginUser == null || !"ADMIN".equals(loginUser.getRole())) {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN);
 		}
 
-		model.addAttribute("users", adminUserService.getUsers());
-		return "admin/users";
+		model.addAttribute("departments", adminDepartmentService.getDepartments());
+		return "admin/departments";
 	}
 }

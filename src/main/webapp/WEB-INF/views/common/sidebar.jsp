@@ -23,7 +23,7 @@
 			<div class="submenu">
 				<a href="#">전체 현황</a>
 				<a href="${pageContext.request.contextPath}/admin/users">사용자 관리</a>
-				<a href="#">부서 관리</a>
+				<a href="${pageContext.request.contextPath}/admin/departments">부서 관리</a>
 				<a href="#">협력회사 관리</a>
 			</div>
 		</div>

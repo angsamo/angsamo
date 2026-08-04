@@ -1,4 +1,4 @@
-package com.angsamo.erp.board.dto;
+package com.angsamo.erp.admin.dto;
 
 import java.time.LocalDateTime;
 
@@ -7,12 +7,10 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class Board {
-
-	private Long boardId;
-	private String boardCode;
-	private String boardName;
+public class DepartmentListItem {
 	private Long departmentId;
+	private String departmentCode;
+	private String departmentName;
 	private Boolean active;
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
