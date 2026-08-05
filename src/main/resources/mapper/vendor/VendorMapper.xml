@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.angsamo.erp.vendor.mapper.VendorMapper">
+
+    <!-- 관리자 조회에서는 vendorId가 null이며 협력회사 사용자는 자기 업체 데이터만 조회한다. -->
+    <sql id="vendorScope">
+        <if test="vendorId != null">AND p.selected_vendor_id = #{vendorId}</if>
+    </sql>
+
+    <sql id="orderColumns">
+        p.procurement_id AS procurementId,
+        p.selected_vendor_id AS vendorId,
+        v.vendor_name AS vendorName,
+        i.item_code AS itemCode,
+        i.item_name AS itemName,
+        i.spec AS spec,
+        i.unit AS unit,
+        p.order_qty AS orderQty,
+        p.received_qty AS receivedQty,
+        p.unit_price AS unitPrice,
+        p.required_date AS requiredDate,
+        p.status AS status,
+        p.terms AS terms,
+        p.ordered_at AS orderedAt,
+        p.shipped_at AS shippedAt,
+        p.received_at AS receivedAt,
+        p.inspection_result AS inspectionResult
+    </sql>
+
+    <select id="findDashboardSummary" resultType="com.angsamo.erp.vendor.dto.VendorDashboardSummary">
+        SELECT
+            (SELECT COUNT(*) FROM vendor_quote q
+             WHERE q.status = 'REQUESTED'
+             <if test="vendorId != null">AND q.vendor_id = #{vendorId}</if>) AS requestedQuoteCount,
+            (SELECT COUNT(*) FROM vendor_quote q
+             WHERE q.status = 'SUBMITTED'
+             <if test="vendorId != null">AND q.vendor_id = #{vendorId}</if>) AS submittedQuoteCount,
+            COALESCE(SUM(CASE WHEN p.status = 'ORDERED' THEN 1 ELSE 0 END), 0) AS orderedCount,
+            COALESCE(SUM(CASE WHEN p.status = 'IN_PROGRESS' THEN 1 ELSE 0 END), 0) AS inProgressCount,
+            COALESCE(SUM(CASE WHEN p.status = 'SHIPPED' THEN 1 ELSE 0 END), 0) AS shippedCount,
+            COALESCE(SUM(CASE WHEN p.status IN ('RETURNED', 'RETURN_REQUESTED', 'RESUPPLYING') THEN 1 ELSE 0 END), 0) AS returnCount
+        FROM procurement p
+        <where>
+            p.selected_vendor_id IS NOT NULL
+            <include refid="vendorScope"/>
+        </where>
+    </select>
+
+    <select id="findQuotes" resultType="com.angsamo.erp.vendor.dto.VendorQuoteItem">
+        SELECT q.quote_id AS quoteId,
+               q.procurement_id AS procurementId,
+               q.vendor_id AS vendorId,
+               v.vendor_name AS vendorName,
+               i.item_code AS itemCode,
+               i.item_name AS itemName,
+               i.spec AS spec,
+               i.unit AS unit,
+               p.request_qty AS requestQty,
+               p.required_date AS requiredDate,
+               p.quote_deadline AS quoteDeadline,
+               q.status AS status,
+               q.unit_price AS unitPrice,
+               q.delivery_date AS deliveryDate,
+               q.terms AS terms,
+               q.submitted_at AS submittedAt
+        FROM vendor_quote q
+        JOIN procurement p ON p.procurement_id = q.procurement_id
+        JOIN item i ON i.item_id = p.item_id
+        JOIN vendor v ON v.vendor_id = q.vendor_id
+        <where>
+            <if test="vendorId != null">q.vendor_id = #{vendorId}</if>
+            <if test="status != null">AND q.status = #{status}</if>
+        </where>
+        ORDER BY CASE WHEN q.status = 'REQUESTED' THEN 0 ELSE 1 END,
+                 p.quote_deadline, q.quote_id DESC
+    </select>
+
+    <select id="findOrders" resultType="com.angsamo.erp.vendor.dto.VendorOrderItem">
+        SELECT <include refid="orderColumns"/>
+        FROM procurement p
+        JOIN item i ON i.item_id = p.item_id
+        JOIN vendor v ON v.vendor_id = p.selected_vendor_id
+        <where>
+            p.selected_vendor_id IS NOT NULL
+            <include refid="vendorScope"/>
+            <if test="status != null">AND p.status = #{status}</if>
+        </where>
+        ORDER BY CASE p.status WHEN 'ORDERED' THEN 0 WHEN 'IN_PROGRESS' THEN 1 WHEN 'SHIPPED' THEN 2 ELSE 3 END,
+                 p.required_date, p.procurement_id DESC
+    </select>
+
+    <select id="findOrder" resultType="com.angsamo.erp.vendor.dto.VendorOrderItem">
+        SELECT <include refid="orderColumns"/>
+        FROM procurement p
+        JOIN item i ON i.item_id = p.item_id
+        JOIN vendor v ON v.vendor_id = p.selected_vendor_id
+        WHERE p.procurement_id = #{procurementId}
+          AND p.selected_vendor_id IS NOT NULL
+          <if test="vendorId != null">AND p.selected_vendor_id = #{vendorId}</if>
+    </select>
+
+    <select id="findInspections" resultType="com.angsamo.erp.vendor.dto.VendorOrderItem">
+        SELECT <include refid="orderColumns"/>
+        FROM procurement p
+        JOIN item i ON i.item_id = p.item_id
+        JOIN vendor v ON v.vendor_id = p.selected_vendor_id
+        <where>
+            p.selected_vendor_id IS NOT NULL
+            AND (p.inspection_result IS NOT NULL OR p.status IN ('SHIPPED','RECEIVED','RETURNED','RETURN_REQUESTED','RESUPPLYING','CLOSED'))
+            <include refid="vendorScope"/>
+        </where>
+        ORDER BY COALESCE(p.received_at, p.shipped_at, p.updated_at) DESC
+    </select>
+
+    <select id="findReturns" resultType="com.angsamo.erp.vendor.dto.VendorOrderItem">
+        SELECT <include refid="orderColumns"/>
+        FROM procurement p
+        JOIN item i ON i.item_id = p.item_id
+        JOIN vendor v ON v.vendor_id = p.selected_vendor_id
+        <where>
+            p.selected_vendor_id IS NOT NULL
+            AND (p.inspection_result IN ('RETURNED','REJECTED','PARTIAL')
+                 OR p.status IN ('RETURNED','RETURN_REQUESTED','RESUPPLYING'))
+            <include refid="vendorScope"/>
+        </where>
+        ORDER BY p.updated_at DESC
+    </select>
+
+    <select id="findStatements" resultType="com.angsamo.erp.vendor.dto.VendorOrderItem">
+        SELECT <include refid="orderColumns"/>
+        FROM procurement p
+        JOIN item i ON i.item_id = p.item_id
+        JOIN vendor v ON v.vendor_id = p.selected_vendor_id
+        <where>
+            p.selected_vendor_id IS NOT NULL
+            AND p.status IN ('RECEIVED','STATEMENT_ISSUED','CLOSED')
+            <include refid="vendorScope"/>
+        </where>
+        ORDER BY p.received_at DESC, p.procurement_id DESC
+    </select>
+
+    <!-- 견적은 자기 업체의 REQUESTED 상태이며 마감일이 지나지 않은 경우에만 제출한다. -->
+    <update id="submitQuote">
+        UPDATE vendor_quote q
+        JOIN procurement p ON p.procurement_id = q.procurement_id
+        SET q.unit_price = #{unitPrice},
+            q.delivery_date = #{deliveryDate},
+            q.terms = #{terms},
+            q.submitted_at = NOW(),
+            q.status = 'SUBMITTED'
+        WHERE q.quote_id = #{quoteId}
+          AND q.vendor_id = #{vendorId}
+          AND q.status = 'REQUESTED'
+          AND (p.quote_deadline IS NULL OR p.quote_deadline &gt;= CURRENT_DATE)
+    </update>
+
+    <!-- 선정 업체의 발주 완료 건만 제작 중으로 변경한다. -->
+    <update id="startProduction">
+        UPDATE procurement
+        SET status = 'IN_PROGRESS'
+        WHERE procurement_id = #{procurementId}
+          AND selected_vendor_id = #{vendorId}
+          AND status = 'ORDERED'
+    </update>
+
+    <!-- 제작 중인 선정 업체의 조달 건만 출하 완료로 변경한다. -->
+    <update id="shipOrder">
+        UPDATE procurement
+        SET status = 'SHIPPED', shipped_at = NOW()
+        WHERE procurement_id = #{procurementId}
+          AND selected_vendor_id = #{vendorId}
+          AND status = 'IN_PROGRESS'
+    </update>
+
+    <!-- 자재 검수에서 반품된 자기 업체 건만 보완 완료 후 재출하한다. -->
+    <update id="reshipReturn">
+        UPDATE procurement
+        SET status = 'SHIPPED', shipped_at = NOW()
+        WHERE procurement_id = #{procurementId}
+          AND selected_vendor_id = #{vendorId}
+          AND status IN ('RETURNED','RETURN_REQUESTED','RESUPPLYING')
+    </update>
+</mapper>

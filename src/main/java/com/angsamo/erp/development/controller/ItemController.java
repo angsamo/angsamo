@@ -76,9 +76,19 @@ public class ItemController {
     @GetMapping("/{itemId}")
     public String detail(
             @PathVariable Long itemId,
-            Model model
+            Model model,
+            RedirectAttributes redirectAttributes
     ) {
         Item item = itemService.findByItemId(itemId);
+
+        if (item == null) {
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    "해당 품목을 찾을 수 없습니다."
+            );
+
+            return "redirect:/development/items";
+        }
 
         model.addAttribute("item", item);
 
@@ -147,19 +157,19 @@ public class ItemController {
         }
     }
 
-    // 품목 삭제 처리
+    // 품목 미사용 처리
     @PostMapping("/{itemId}/delete")
-    public String delete(
+    public String deactivate(
             @PathVariable Long itemId,
             RedirectAttributes redirectAttributes
     ) {
         try {
-            boolean deleted = itemService.delete(itemId);
+            boolean deactivated = itemService.deactivate(itemId);
 
-            if (deleted) {
+            if (deactivated) {
                 redirectAttributes.addFlashAttribute(
                         "message",
-                        "품목이 삭제되었습니다."
+                        "품목이 미사용 처리되었습니다."
                 );
 
                 return "redirect:/development/items";
@@ -167,7 +177,7 @@ public class ItemController {
 
             redirectAttributes.addFlashAttribute(
                     "errorMessage",
-                    "삭제할 품목을 찾을 수 없습니다."
+                    "미사용 처리할 품목을 찾을 수 없습니다."
             );
 
             return "redirect:/development/items";
@@ -178,7 +188,7 @@ public class ItemController {
                     e.getMessage()
             );
 
-            return "redirect:/development/items/" + itemId;
+            return "redirect:/development/items";
         }
     }
 }

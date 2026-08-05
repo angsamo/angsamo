@@ -57,7 +57,7 @@
 		</div>
 
 		<div class="nav-group">
-			<a class="nav-link" href="#">
+			<a class="nav-link" href="${pageContext.request.contextPath}/purchase/procurements">
 				<span class="material-symbols-outlined">shopping_cart</span>
 				<span>구매부서</span>
 				<span class="nav-arrow material-symbols-outlined">chevron_right</span>

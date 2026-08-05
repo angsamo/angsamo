@@ -28,6 +28,18 @@
                     <p>자재요청을 기반으로 생성된 조달업무의 진행 상태를 조회합니다.</p>
                 </div>
             </section>
+			
+			<c:if test="${not empty success}">
+							    <p class="flash success">
+							        <c:out value="${success}"/>
+							    </p>
+							</c:if>
+
+							<c:if test="${not empty error}">
+							    <p class="flash error">
+							        <c:out value="${error}"/>
+							    </p>
+							</c:if>
 
             <section class="panel table-panel">
                 <div class="panel-header">

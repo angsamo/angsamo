@@ -3,7 +3,6 @@ package com.angsamo.erp.development.service;
 import java.math.BigDecimal;
 import java.util.List;
 
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import com.angsamo.erp.development.domain.Item;
@@ -82,22 +81,23 @@ public class ItemService {
     }
 
     // 품목 삭제
-    public boolean delete(Long itemId) {
+    public boolean deactivate(Long itemId) {
+
         Item existingItem = itemMapper.findByItemId(itemId);
 
         if (existingItem == null) {
             return false;
         }
 
-        try {
-            return itemMapper.deleteByItemId(itemId) > 0;
+        if (existingItem.getActive() != null
+                && existingItem.getActive() == 0) {
 
-        } catch (DataIntegrityViolationException e) {
             throw new IllegalStateException(
-                    "BOM, 생산계획, 재고 등 다른 업무에서 사용 중인 품목은 삭제할 수 없습니다.",
-                    e
+                    "이미 미사용 처리된 품목입니다."
             );
         }
+
+        return itemMapper.deactivateByItemId(itemId) > 0;
     }
 
     // 기본값 처리 및 유효성 검사

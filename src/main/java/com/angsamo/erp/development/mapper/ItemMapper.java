@@ -20,5 +20,5 @@ public interface ItemMapper {
 
     int update(Item item);
 
-    int deleteByItemId(@Param("itemId") Long itemId);
+    int deactivateByItemId(@Param("itemId") Long itemId);
 }

@@ -27,10 +27,18 @@
                     <h1>조달업무 상세</h1>
                     <p>조달번호 <c:out value="${procurement.procurementId}" />의 진행 정보를 조회합니다.</p>
                 </div>
+				
                 <a class="primary-button"
                    href="${pageContext.request.contextPath}/purchase/procurements">
                     목록으로
                 </a>
+				
+				<c:if test="${procurement.status == 'REQUESTED'}">
+				    <a class="action-button"
+				       href="${pageContext.request.contextPath}/purchase/procurements/${procurement.procurementId}/edit">
+				        수정
+				    </a>
+				</c:if>
             </section>
 
             <section class="panel table-panel">
@@ -93,9 +101,67 @@
                         </tbody>
                     </table>
                 </div>
-            </section>
+				</section>
 
-            <section class="panel table-panel">
+				<c:if test="${not empty success}">
+				    <p class="flash success">
+				        <c:out value="${success}"/>
+				    </p>
+				</c:if>
+
+				<c:if test="${not empty error}">
+				    <p class="flash error">
+				        <c:out value="${error}"/>
+				    </p>
+				</c:if>
+
+				<c:if test="${procurement.status == 'REQUESTED'}">
+				    <section class="panel">
+				        <div class="panel-header">
+				            <div>
+				                <p class="eyebrow">QUOTE REQUEST</p>
+				                <h2>협력업체 견적 요청</h2>
+				            </div>
+				        </div>
+
+				        <form method="post"
+				              action="${pageContext.request.contextPath}/purchase/procurements/${procurement.procurementId}/quotes">
+
+				            <c:forEach var="vendor" items="${vendors}">
+				                <label class="vendor-check">
+				                    <input type="checkbox"
+				                           name="vendorIds"
+				                           value="${vendor.vendorId}">
+
+				                    <span>
+				                        <c:out value="${vendor.vendorCode}"/>
+				                        -
+				                        <c:out value="${vendor.vendorName}"/>
+				                    </span>
+				                </label>
+				            </c:forEach>
+
+				            <c:if test="${empty vendors}">
+				                <p>거래 중인 협력업체가 없습니다.</p>
+				            </c:if>
+
+				            <c:if test="${not empty vendors}">
+				                <button class="action-button" type="submit">
+				                    선택 업체에 견적 요청
+				                </button>
+				            </c:if>
+				        </form>
+				    </section>
+
+				    <form method="post"
+				          action="${pageContext.request.contextPath}/purchase/procurements/${procurement.procurementId}/cancel"
+				          onsubmit="return confirm('조달업무를 취소하시겠습니까?');">
+
+				        <button type="submit">조달업무 취소</button>
+				    </form>
+				</c:if>
+
+           		<section class="panel table-panel">
                 <div class="panel-header">
                     <div>
                         <p class="eyebrow">VENDOR &amp; ORDER</p>
