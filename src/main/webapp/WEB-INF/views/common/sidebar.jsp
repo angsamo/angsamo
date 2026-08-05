@@ -35,7 +35,7 @@
 				<span class="nav-arrow material-symbols-outlined">chevron_right</span>
 			</a>
 			<div class="submenu">
-				<a href="${pageContext.request.contextPath}/development/items">개발 현황</a>
+				<a href="#">개발 현황</a>
 				<a href="${pageContext.request.contextPath}/development/items">품목 관리</a>
 				<a href="${pageContext.request.contextPath}/development/boms">BOM 관리</a>
 			</div>
