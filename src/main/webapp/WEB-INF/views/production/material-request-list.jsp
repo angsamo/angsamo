@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 
 <!DOCTYPE html>
 <html lang="ko">
@@ -8,7 +9,7 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
-    <title>자재요청 조회</title>
+    <title>자재요청 관리</title>
 
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
           rel="stylesheet">
@@ -17,34 +18,16 @@
           href="${pageContext.request.contextPath}/resources/css/common.css">
 
     <style>
-        .table-scroll {
-            width: 100%;
-            overflow-x: auto;
+        .message-notice {
+            color: #14653f;
+            background: #e5f7ed;
+            border-color: #b8e2c9;
         }
 
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .data-table th,
-        .data-table td {
-            padding: 14px 16px;
-            border-bottom: 1px solid var(--border);
-            text-align: left;
-            vertical-align: middle;
-            white-space: nowrap;
-        }
-
-        .data-table th {
-            color: var(--muted);
-            background: #f8fafc;
-            font-size: 12px;
-            font-weight: 700;
-        }
-
-        .data-table tbody tr:hover {
-            background: #f8fbff;
+        .error-notice {
+            color: #9f1d1d;
+            background: #fff0f0;
+            border-color: #f1b8b8;
         }
 
         .item-code {
@@ -64,9 +47,18 @@
             font-variant-numeric: tabular-nums;
         }
 
+        .plan-link {
+            color: var(--blue);
+            font-weight: 700;
+        }
+
+        .plan-link:hover {
+            text-decoration: underline;
+        }
+
         .status-badge {
             display: inline-flex;
-            min-width: 86px;
+            min-width: 88px;
             align-items: center;
             justify-content: center;
             padding: 5px 10px;
@@ -80,19 +72,14 @@
             background: #e2efff;
         }
 
-        .status-badge.approved {
-            color: #6141b6;
-            background: #eee9ff;
+        .status-badge.partial {
+            color: #8a5600;
+            background: #fff0d2;
         }
 
         .status-badge.issued {
             color: #14653f;
             background: #ddf4e7;
-        }
-
-        .status-badge.shortage {
-            color: #8a5600;
-            background: #fff0d2;
         }
 
         .status-badge.rejected {
@@ -103,6 +90,31 @@
         .status-badge.unknown {
             color: #526174;
             background: #eef2f7;
+        }
+
+        .action-button {
+            display: inline-flex;
+            height: 32px;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            padding: 0 10px;
+            color: var(--text);
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .action-button:hover {
+            color: var(--blue);
+            background: #f8fbff;
+            border-color: var(--blue);
+        }
+
+        .action-button .material-symbols-outlined {
+            font-size: 17px;
         }
 
         .empty-state {
@@ -137,20 +149,73 @@
         <section class="page-heading">
             <div>
                 <p class="eyebrow">PRODUCTION</p>
-                <h1>자재요청 조회</h1>
-                <p>
-                    생산계획에 필요한 자재 요청과 불출 처리 상태를 조회합니다.
-                </p>
+
+                <c:choose>
+                    <c:when test="${not empty productionPlanId}">
+                        <h1>생산계획별 자재요청</h1>
+                        <p>
+                            생산계획 #${productionPlanId}에서 생성된 자재요청을 조회합니다.
+                        </p>
+                    </c:when>
+
+                    <c:otherwise>
+                        <h1>자재요청 관리</h1>
+                        <p>
+                            생산계획에 필요한 자재 요청과 불출 처리 상태를 조회합니다.
+                        </p>
+                    </c:otherwise>
+                </c:choose>
             </div>
         </section>
 
-        <section class="panel">
+        <c:if test="${not empty message}">
+            <div class="notice message-notice">
+                <span class="material-symbols-outlined">
+                    check_circle
+                </span>
+
+                <p>
+                    <c:out value="${message}" />
+                </p>
+            </div>
+        </c:if>
+
+        <c:if test="${not empty errorMessage}">
+            <div class="notice error-notice">
+                <span class="material-symbols-outlined">
+                    error
+                </span>
+
+                <p>
+                    <c:out value="${errorMessage}" />
+                </p>
+            </div>
+        </c:if>
+
+        <section class="panel table-panel">
 
             <div class="panel-header">
                 <div>
                     <p class="eyebrow">MATERIAL REQUEST LIST</p>
-                    <h2>전체 자재요청</h2>
+
+                    <c:choose>
+                        <c:when test="${not empty productionPlanId}">
+                            <h2>생산계획별 자재요청</h2>
+                        </c:when>
+
+                        <c:otherwise>
+                            <h2>전체 자재요청</h2>
+                        </c:otherwise>
+                    </c:choose>
                 </div>
+
+                <span class="list-count">
+                    총
+                    <strong>
+                        <c:out value="${empty materialRequests ? 0 : materialRequests.size()}" />
+                    </strong>
+                    건
+                </span>
             </div>
 
             <c:choose>
@@ -183,6 +248,7 @@
                                     <th>처리자</th>
                                     <th>불출일시</th>
                                     <th>등록일</th>
+                                    <th>관리</th>
                                 </tr>
                             </thead>
 
@@ -193,7 +259,12 @@
                                     <tr>
                                         <td>${request.requestId}</td>
 
-                                        <td>${request.productionPlanId}</td>
+                                        <td>
+                                            <a class="plan-link"
+                                               href="${pageContext.request.contextPath}/production/plans/${request.productionPlanId}">
+                                                ${request.productionPlanId}
+                                            </a>
+                                        </td>
 
                                         <td>
                                             <c:choose>
@@ -202,27 +273,37 @@
                                                 </c:when>
 
                                                 <c:otherwise>
-                                                    ${request.departmentName}
+                                                    <c:out value="${request.departmentName}" />
                                                 </c:otherwise>
                                             </c:choose>
                                         </td>
 
                                         <td>
                                             <div class="item-code">
-                                                ${request.itemCode}
+                                                <c:out value="${request.itemCode}" />
                                             </div>
 
                                             <div class="item-name">
-                                                ${request.itemName}
+                                                <c:out value="${request.itemName}" />
                                             </div>
                                         </td>
 
                                         <td class="quantity">
-                                            ${request.requestQty}
+                                            <fmt:formatNumber
+                                                value="${request.requestQty}"
+                                                type="number"
+                                                minFractionDigits="0"
+                                                maxFractionDigits="3"
+                                                groupingUsed="false" />
                                         </td>
 
                                         <td class="quantity">
-                                            ${request.issuedQty}
+                                            <fmt:formatNumber
+                                                value="${request.issuedQty}"
+                                                type="number"
+                                                minFractionDigits="0"
+                                                maxFractionDigits="3"
+                                                groupingUsed="false" />
                                         </td>
 
                                         <td>${request.requiredDate}</td>
@@ -235,9 +316,9 @@
                                                     </span>
                                                 </c:when>
 
-                                                <c:when test="${request.status == 'APPROVED'}">
-                                                    <span class="status-badge approved">
-                                                        승인
+                                                <c:when test="${request.status == 'PARTIAL'}">
+                                                    <span class="status-badge partial">
+                                                        부분 불출
                                                     </span>
                                                 </c:when>
 
@@ -247,21 +328,15 @@
                                                     </span>
                                                 </c:when>
 
-                                                <c:when test="${request.status == 'SHORTAGE'}">
-                                                    <span class="status-badge shortage">
-                                                        재고 부족
-                                                    </span>
-                                                </c:when>
-
                                                 <c:when test="${request.status == 'REJECTED'}">
                                                     <span class="status-badge rejected">
-                                                        반려
+                                                        취소·반려
                                                     </span>
                                                 </c:when>
 
                                                 <c:otherwise>
                                                     <span class="status-badge unknown">
-                                                        ${request.status}
+                                                        <c:out value="${request.status}" />
                                                     </span>
                                                 </c:otherwise>
                                             </c:choose>
@@ -274,7 +349,7 @@
                                                 </c:when>
 
                                                 <c:otherwise>
-                                                    ${request.requestedByName}
+                                                    <c:out value="${request.requestedByName}" />
                                                 </c:otherwise>
                                             </c:choose>
                                         </td>
@@ -286,7 +361,7 @@
                                                 </c:when>
 
                                                 <c:otherwise>
-                                                    ${request.processedByName}
+                                                    <c:out value="${request.processedByName}" />
                                                 </c:otherwise>
                                             </c:choose>
                                         </td>
@@ -304,6 +379,18 @@
                                         </td>
 
                                         <td>${request.createdAt}</td>
+
+                                        <td>
+                                            <a class="action-button"
+                                               href="${pageContext.request.contextPath}/production/material-requests/${request.requestId}">
+
+                                                <span class="material-symbols-outlined">
+                                                    visibility
+                                                </span>
+
+                                                상세
+                                            </a>
+                                        </td>
                                     </tr>
 
                                 </c:forEach>

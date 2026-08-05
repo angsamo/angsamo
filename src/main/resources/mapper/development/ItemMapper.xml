@@ -8,20 +8,21 @@
 
     <select id="findAll"
             resultType="com.angsamo.erp.development.domain.Item">
-        SELECT
-            item_id,
-            item_code,
-            item_name,
-            item_type,
-            spec,
-            unit,
-            standard_price,
-            description,
-            active,
-            created_at,
-            updated_at
-        FROM item
-        ORDER BY item_id DESC
+       SELECT
+    item_id,
+    item_code,
+    item_name,
+    item_type,
+    spec,
+    unit,
+    standard_price,
+    description,
+    active,
+    created_at,
+    updated_at
+FROM item
+WHERE active = 1
+ORDER BY item_id DESC
     </select>
 
     <select id="findByItemId"
@@ -40,7 +41,8 @@
             created_at,
             updated_at
         FROM item
-        WHERE item_id = #{itemId}
+       WHERE item_id = #{itemId}
+AND active = 1
     </select>
 
     <select id="findByItemCode"
@@ -103,10 +105,14 @@
         WHERE item_id = #{itemId}
     </update>
 
-    <delete id="deleteByItemId"
-            parameterType="long">
-        DELETE FROM item
-        WHERE item_id = #{itemId}
-    </delete>
+    <update id="deactivateByItemId"
+        parameterType="long">
+    UPDATE item
+    SET
+        active = 0,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE item_id = #{itemId}
+      AND active = 1
+</update>
 
 </mapper>

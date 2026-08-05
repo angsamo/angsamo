@@ -18,20 +18,12 @@
             b.created_at,
             b.updated_at,
 
-            parent_item.item_code
-                AS parent_item_code,
+            parent_item.item_code AS parent_item_code,
+            parent_item.item_name AS parent_item_name,
 
-            parent_item.item_name
-                AS parent_item_name,
-
-            component_item.item_code
-                AS component_item_code,
-
-            component_item.item_name
-                AS component_item_name,
-
-            component_item.unit
-                AS component_unit
+            component_item.item_code AS component_item_code,
+            component_item.item_name AS component_item_name,
+            component_item.unit AS component_unit
 
         FROM bom b
 
@@ -44,7 +36,57 @@
         ORDER BY
             parent_item.item_code,
             component_item.item_code
+    </select>
 
+
+    <!-- BOM 상세 조회 -->
+    <select id="findByBomId"
+            parameterType="long"
+            resultType="com.angsamo.erp.development.domain.Bom">
+
+        SELECT
+            b.bom_id,
+            b.parent_item_id,
+            b.component_item_id,
+            b.required_qty,
+            b.created_at,
+            b.updated_at,
+
+            parent_item.item_code AS parent_item_code,
+            parent_item.item_name AS parent_item_name,
+
+            component_item.item_code AS component_item_code,
+            component_item.item_name AS component_item_name,
+            component_item.unit AS component_unit
+
+        FROM bom b
+
+        JOIN item parent_item
+          ON parent_item.item_id = b.parent_item_id
+
+        JOIN item component_item
+          ON component_item.item_id = b.component_item_id
+
+        WHERE b.bom_id = #{bomId}
+    </select>
+
+
+    <!-- 같은 완제품 + 구성 자재 중복 검사 -->
+    <select id="findByParentAndComponent"
+            resultType="com.angsamo.erp.development.domain.Bom">
+
+        SELECT
+            bom_id,
+            parent_item_id,
+            component_item_id,
+            required_qty,
+            created_at,
+            updated_at
+
+        FROM bom
+
+        WHERE parent_item_id = #{parentItemId}
+          AND component_item_id = #{componentItemId}
     </select>
 
 
@@ -61,20 +103,12 @@
             b.created_at,
             b.updated_at,
 
-            parent_item.item_code
-                AS parent_item_code,
+            parent_item.item_code AS parent_item_code,
+            parent_item.item_name AS parent_item_name,
 
-            parent_item.item_name
-                AS parent_item_name,
-
-            component_item.item_code
-                AS component_item_code,
-
-            component_item.item_name
-                AS component_item_name,
-
-            component_item.unit
-                AS component_unit
+            component_item.item_code AS component_item_code,
+            component_item.item_name AS component_item_name,
+            component_item.unit AS component_unit
 
         FROM bom b
 
@@ -87,7 +121,49 @@
         WHERE b.parent_item_id = #{parentItemId}
 
         ORDER BY component_item.item_code
-
     </select>
+
+
+    <!-- BOM 구성 자재 등록 -->
+    <insert id="insert"
+            parameterType="com.angsamo.erp.development.domain.Bom"
+            useGeneratedKeys="true"
+            keyProperty="bomId"
+            keyColumn="bom_id">
+
+        INSERT INTO bom (
+            parent_item_id,
+            component_item_id,
+            required_qty
+        )
+        VALUES (
+            #{parentItemId},
+            #{componentItemId},
+            #{requiredQty}
+        )
+    </insert>
+
+
+    <!-- BOM 필요 수량 수정 -->
+    <update id="update"
+            parameterType="com.angsamo.erp.development.domain.Bom">
+
+        UPDATE bom
+
+        SET
+            required_qty = #{requiredQty},
+            updated_at = CURRENT_TIMESTAMP
+
+        WHERE bom_id = #{bomId}
+    </update>
+
+
+    <!-- BOM 구성 자재 삭제 -->
+    <delete id="delete"
+            parameterType="long">
+
+        DELETE FROM bom
+        WHERE bom_id = #{bomId}
+    </delete>
 
 </mapper>
