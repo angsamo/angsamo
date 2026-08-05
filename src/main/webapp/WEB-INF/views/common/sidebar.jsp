@@ -21,10 +21,10 @@
 				<span class="nav-arrow material-symbols-outlined">chevron_right</span>
 			</a>
 			<div class="submenu">
-				<a href="#">전체 현황</a>
+				<a href="${pageContext.request.contextPath}/admin/users">전체 현황</a>
 				<a href="${pageContext.request.contextPath}/admin/users">사용자 관리</a>
 				<a href="${pageContext.request.contextPath}/admin/departments">부서 관리</a>
-				<a href="#">협력회사 관리</a>
+				<a href="${pageContext.request.contextPath}/purchase/vendors">협력회사 관리</a>
 			</div>
 		</div>
 
@@ -35,9 +35,9 @@
 				<span class="nav-arrow material-symbols-outlined">chevron_right</span>
 			</a>
 			<div class="submenu">
-				<a href="#">개발 현황</a>
-				<a href="#">품목 관리</a>
-				<a href="#">BOM 관리</a>
+				<a href="${pageContext.request.contextPath}/development/items">개발 현황</a>
+				<a href="${pageContext.request.contextPath}/development/items">품목 관리</a>
+				<a href="${pageContext.request.contextPath}/development/boms">BOM 관리</a>
 			</div>
 		</div>
 
@@ -48,11 +48,11 @@
 				<span class="nav-arrow material-symbols-outlined">chevron_right</span>
 			</a>
 			<div class="submenu">
-				<a href="#">생산 현황</a>
-				<a href="#">생산계획</a>
-				<a href="#">자재 소요량</a>
-				<a href="#">불출 요청</a>
-				<a href="#">재고 조회</a>
+				<a href="${pageContext.request.contextPath}/production/plans">생산 현황</a>
+				<a href="${pageContext.request.contextPath}/production/plans">생산계획</a>
+				<a href="${pageContext.request.contextPath}/production/material-requests">자재 소요량</a>
+				<a href="${pageContext.request.contextPath}/production/material-requests">불출 요청</a>
+				<a href="${pageContext.request.contextPath}/material/inventory">재고 조회</a>
 			</div>
 		</div>
 
@@ -63,12 +63,12 @@
 				<span class="nav-arrow material-symbols-outlined">chevron_right</span>
 			</a>
 			<div class="submenu">
-				<a href="#">구매 현황</a>
-				<a href="#">조달계획</a>
-				<a href="#">견적 관리</a>
-				<a href="#">구매 발주</a>
-				<a href="#">진척 관리</a>
-				<a href="#">연계 조회</a>
+				<a href="${pageContext.request.contextPath}/purchase/procurements">구매 현황</a>
+				<a href="${pageContext.request.contextPath}/purchase/procurements">조달계획</a>
+				<a href="${pageContext.request.contextPath}/purchase/quotes">견적 관리</a>
+				<a href="${pageContext.request.contextPath}/purchase/procurements">구매 발주</a>
+				<a href="${pageContext.request.contextPath}/purchase/procurements">진척 관리</a>
+				<a href="${pageContext.request.contextPath}/purchase/shortages">연계 조회</a>
 			</div>
 		</div>
 
@@ -79,12 +79,12 @@
 				<span class="nav-arrow material-symbols-outlined">chevron_right</span>
 			</a>
 			<div class="submenu">
-				<a href="#">자재 현황</a>
-				<a href="#">입고 관리</a>
-				<a href="#">반품 관리</a>
-				<a href="#">재고 관리</a>
-				<a href="#">출고 관리</a>
-				<a href="#">거래명세서</a>
+				<a href="${pageContext.request.contextPath}/material">자재 현황</a>
+				<a href="${pageContext.request.contextPath}/material/receivings">입고 관리</a>
+				<a href="${pageContext.request.contextPath}/material/returns">반품 관리</a>
+				<a href="${pageContext.request.contextPath}/material/inventory">재고 관리</a>
+				<a href="${pageContext.request.contextPath}/material/issues">출고 관리</a>
+				<a href="${pageContext.request.contextPath}/material/statements">거래명세서</a>
 			</div>
 		</div>
 

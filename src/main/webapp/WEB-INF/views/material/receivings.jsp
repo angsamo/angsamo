@@ -5,8 +5,9 @@
 <head>
 	<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 	<title>입고 관리 | 앙사모 ERP</title>
-	<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/common.css?v=20260804-4">
-	<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/material.css?v=20260804-2">
+	<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/common.css">
+	<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/material.css">
 </head>
 <body>
 	<jsp:include page="/WEB-INF/views/common/sidebar.jsp"/>
@@ -96,5 +97,5 @@
 			</section>
 		</main>
 	</div>
-	<script src="${pageContext.request.contextPath}/resources/js/common.js?v=20260804-5"></script>
+	<script src="${pageContext.request.contextPath}/resources/js/common.js"></script>
 </body></html>

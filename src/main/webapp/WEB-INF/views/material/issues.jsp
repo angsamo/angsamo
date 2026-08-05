@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>출고 관리 | 앙사모 ERP</title><link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/common.css?v=20260804-4"><link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/material.css?v=20260804-3"></head>
+<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>출고 관리 | 앙사모 ERP</title><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/common.css"><link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/material.css"></head>
 <body><c:set var="headerTitle" value="자재 출고 프로세스" scope="request"/><jsp:include page="/WEB-INF/views/common/sidebar.jsp"/><div class="app-shell"><jsp:include page="/WEB-INF/views/common/header.jsp"/><main class="workspace">
 	<section class="page-heading"><div><p class="eyebrow">MATERIAL ISSUE</p><h1>자재 출고 관리</h1><p>생산 요청에 따라 재고를 파악하고 자재 불출, 출고 처리, 재고 및 금액 산출을 수행합니다.</p></div></section>
 	<c:if test="${not empty success}"><div class="flash success">${success}</div></c:if><c:if test="${not empty error}"><div class="flash error">${error}</div></c:if>
@@ -18,4 +19,4 @@
 	</section>
 
 	<section class="panel value-report"><div class="panel-header"><div><p class="eyebrow">INVENTORY VALUE REPORT</p><h2>재고 수량 및 재고 금액 현황</h2></div><button class="text-button" type="button" onclick="window.print()">리포트 인쇄</button></div><div class="table-scroll"><table class="data-table"><thead><tr><th>품목</th><th>기본 재고</th><th>기간 출고</th><th>가용 재고</th><th>산출 재고</th><th>공급가격</th><th>재고금액</th><th>산출일</th></tr></thead><tbody><c:forEach items="${valueReport}" var="row"><tr><td>${row.itemName}<br><span class="hint">${row.itemCode}</span></td><td>${row.baseQty}</td><td>${row.periodIssueQty}</td><td><strong>${row.availableQty}</strong></td><td>${row.calcQty}</td><td>${row.unitPrice}</td><td><strong>${row.stockValue}</strong></td><td>${row.updatedAt}</td></tr></c:forEach><c:if test="${empty valueReport}"><tr><td colspan="8" class="empty-cell">재고 산출 자료가 없습니다.</td></tr></c:if></tbody></table></div></section>
-</main></div><script src="${pageContext.request.contextPath}/resources/js/common.js?v=20260804-5"></script></body></html>
+</main></div><script src="${pageContext.request.contextPath}/resources/js/common.js"></script></body></html>
