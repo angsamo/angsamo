@@ -32,6 +32,18 @@
                     목록으로
                 </a>
             </section>
+			
+			<c:if test="${not empty success}">
+			    <p class="flash success">
+			        <c:out value="${success}"/>
+			    </p>
+			</c:if>
+
+			<c:if test="${not empty error}">
+			    <p class="flash error">
+			        <c:out value="${error}"/>
+			    </p>
+			</c:if>
 
             <section class="panel table-panel">
                 <div class="panel-header">
@@ -79,6 +91,75 @@
                     </table>
                 </div>
             </section>
+			
+			<section class="panel table-panel">
+			    <div class="panel-header">
+			        <div>
+			            <p class="eyebrow">VENDOR ACCOUNT</p>
+			            <h2>연결된 로그인 계정</h2>
+			        </div>
+
+			        <span class="state-badge ${empty vendorAccounts ? 'disabled' : 'enabled'}">
+			            ${empty vendorAccounts ? '계정 미연결' : '계정 연결'}
+			        </span>
+			    </div>
+
+			    <div class="table-scroll">
+			        <table class="data-table">
+			            <thead>
+			                <tr>
+			                    <th>사용자 번호</th>
+			                    <th>로그인 아이디</th>
+			                    <th>사용자명</th>
+			                    <th>권한</th>
+			                    <th>계정 상태</th>
+			                    <th>등록일</th>
+			                </tr>
+			            </thead>
+
+			            <tbody>
+			                <c:forEach var="account" items="${vendorAccounts}">
+			                    <tr>
+			                        <td>
+			                            <c:out value="${account.userId}"/>
+			                        </td>
+
+			                        <td>
+			                            <c:out value="${account.loginId}"/>
+			                        </td>
+
+			                        <td>
+			                            <c:out value="${account.userName}"/>
+			                        </td>
+
+			                        <td>
+			                            <c:out value="${account.role}"/>
+			                        </td>
+
+			                        <td>
+			                            <span class="state-badge ${account.active ? 'enabled' : 'disabled'}">
+			                                ${account.active ? '사용 중' : '사용 중지'}
+			                            </span>
+			                        </td>
+
+			                        <td>
+			                            <c:out value="${account.createdAt}"/>
+			                        </td>
+			                    </tr>
+			                </c:forEach>
+
+			                <c:if test="${empty vendorAccounts}">
+			                    <tr>
+			                        <td class="empty-cell" colspan="6">
+			                            이 협력업체에 연결된 로그인 계정이 없습니다.
+			                        </td>
+			                    </tr>
+			                </c:if>
+			            </tbody>
+			        </table>
+			    </div>
+			</section>
+			
         </main>
     </div>
 

@@ -36,63 +36,83 @@
         FROM vendor
         WHERE vendor_id = #{vendorId}
     </select>
+    
+    <select id="findVendorAccounts"
+        resultType="com.angsamo.erp.purchase.dto.VendorAccountItem">
+    	SELECT
+        u.user_id AS userId,
+        u.login_id AS loginId,
+        u.user_name AS userName,
+        u.role,
+        u.active,
+        u.created_at AS createdAt
+    	FROM app_user u
+    	WHERE u.vendor_id = #{vendorId}
+    	ORDER BY u.user_id
+	</select>
 
     <select id="findShortageMaterialRequests"
             resultType="com.angsamo.erp.purchase.dto.ShortageMaterialRequestItem">
-        SELECT
-            mr.request_id AS requestId,
-            mr.production_plan_id AS productionPlanId,
-            mr.department_id AS departmentId,
-            d.department_name AS departmentName,
-            mr.item_id AS itemId,
-            i.item_code AS itemCode,
-            i.item_name AS itemName,
-            i.unit,
-            mr.request_qty AS requestQty,
-            mr.issued_qty AS issuedQty,
-            (mr.request_qty - mr.issued_qty) AS shortageQty,
-            mr.required_date AS requiredDate,
-            mr.status,
-            mr.requested_by AS requestedBy,
-            u.user_name AS requestedByName,
-            mr.created_at AS createdAt
-        FROM material_request mr
-        INNER JOIN item i ON i.item_id = mr.item_id
-        INNER JOIN department d ON d.department_id = mr.department_id
-        INNER JOIN app_user u ON u.user_id = mr.requested_by
-        WHERE mr.status = 'SHORTAGE'
-        ORDER BY mr.required_date, mr.request_id
+		SELECT
+		mr.request_id AS requestId,
+		mr.production_plan_id AS productionPlanId,
+		mr.department_id AS departmentId,
+		d.department_name AS departmentName,
+		mr.item_id AS itemId,
+		i.item_code AS itemCode,
+		i.item_name AS itemName,
+		i.unit,
+		mr.request_qty AS requestQty,
+		mr.issued_qty AS issuedQty,
+		(mr.request_qty - mr.issued_qty) AS shortageQty,
+		mr.required_date AS requiredDate,
+		mr.status,
+		mr.requested_by AS requestedBy,
+		u.user_name AS requestedByName,
+		mr.created_at AS createdAt
+		FROM material_request mr
+		INNER JOIN item i ON i.item_id = mr.item_id
+		INNER JOIN department d ON d.department_id = mr.department_id
+		INNER JOIN app_user u ON u.user_id = mr.requested_by
+		WHERE mr.status = 'SHORTAGE'
+		AND NOT EXISTS (
+		SELECT 1
+		FROM procurement p
+		WHERE p.material_request_id = mr.request_id
+		AND p.status != 'CANCELLED'
+		)
+		ORDER BY mr.required_date, mr.request_id
     </select>
 
     <select id="findProcurements"
             resultType="com.angsamo.erp.purchase.dto.ProcurementListItem">
-        SELECT
-            p.procurement_id AS procurementId,
-            p.material_request_id AS materialRequestId,
-            p.department_id AS departmentId,
-            d.department_name AS departmentName,
-            p.item_id AS itemId,
-            i.item_code AS itemCode,
-            i.item_name AS itemName,
-            i.unit,
-            p.request_qty AS requestQty,
-            p.required_date AS requiredDate,
-            p.quote_deadline AS quoteDeadline,
-            p.selected_vendor_id AS selectedVendorId,
-            v.vendor_name AS selectedVendorName,
-            p.order_qty AS orderQty,
-            p.unit_price AS unitPrice,
-            p.received_qty AS receivedQty,
-            p.status,
-            p.created_by AS createdBy,
-            u.user_name AS createdByName,
-            p.created_at AS createdAt
-        FROM procurement p
-        INNER JOIN department d ON d.department_id = p.department_id
-        INNER JOIN item i ON i.item_id = p.item_id
-        INNER JOIN app_user u ON u.user_id = p.created_by
-        LEFT JOIN vendor v ON v.vendor_id = p.selected_vendor_id
-        ORDER BY p.created_at DESC, p.procurement_id DESC
+		SELECT
+		p.procurement_id AS procurementId,
+		p.material_request_id AS materialRequestId,
+		p.department_id AS departmentId,
+		d.department_name AS departmentName,
+		p.item_id AS itemId,
+		i.item_code AS itemCode,
+		i.item_name AS itemName,
+		i.unit,
+		p.request_qty AS requestQty,
+		p.required_date AS requiredDate,
+		p.quote_deadline AS quoteDeadline,
+		p.selected_vendor_id AS selectedVendorId,
+		v.vendor_name AS selectedVendorName,
+		p.order_qty AS orderQty,
+		p.unit_price AS unitPrice,
+		p.received_qty AS receivedQty,
+		p.status,
+		p.created_by AS createdBy,
+		u.user_name AS createdByName,
+		p.created_at AS createdAt
+		FROM procurement p
+		INNER JOIN department d ON d.department_id = p.department_id
+		INNER JOIN item i ON i.item_id = p.item_id
+		INNER JOIN app_user u ON u.user_id = p.created_by
+		LEFT JOIN vendor v ON v.vendor_id = p.selected_vendor_id
+		ORDER BY p.created_at DESC, p.procurement_id DESC
     </select>
 
     <select id="findProcurementById"
@@ -175,4 +195,187 @@
         ORDER BY q.created_at DESC, q.quote_id DESC
     </select>
 
+    <select id="findActiveVendors"
+            resultType="com.angsamo.erp.purchase.dto.VendorListItem">
+        SELECT
+            vendor_id AS vendorId,
+            vendor_code AS vendorCode,
+            vendor_name AS vendorName,
+            contact_name AS contactName,
+            phone,
+            email,
+            active,
+            created_at AS createdAt
+        FROM vendor
+        WHERE active = 1
+        ORDER BY vendor_name, vendor_id
+    </select>
+
+    <select id="countVendorCode" resultType="int">
+        SELECT COUNT(*)
+        FROM vendor
+        WHERE vendor_code = #{vendorCode}
+        <if test="excludeVendorId != null">
+            AND vendor_id != #{excludeVendorId}
+        </if>
+    </select>
+
+    <insert id="insertVendor">
+        INSERT INTO vendor (
+            vendor_code,
+            vendor_name,
+            contact_name,
+            phone,
+            email,
+            address,
+            active
+        )
+        VALUES (
+            #{vendorCode},
+            #{vendorName},
+            NULLIF(#{contactName}, ''),
+            NULLIF(#{phone}, ''),
+            NULLIF(#{email}, ''),
+            NULLIF(#{address}, ''),
+            1
+        )
+    </insert>
+
+    <update id="updateVendor">
+        UPDATE vendor
+        SET
+            vendor_code = #{form.vendorCode},
+            vendor_name = #{form.vendorName},
+            contact_name = NULLIF(#{form.contactName}, ''),
+            phone = NULLIF(#{form.phone}, ''),
+            email = NULLIF(#{form.email}, ''),
+            address = NULLIF(#{form.address}, ''),
+            active = #{form.active}
+        WHERE vendor_id = #{vendorId}
+    </update>
+
+    <update id="deactivateVendor">
+        UPDATE vendor
+        SET active = 0
+        WHERE vendor_id = #{vendorId}
+          AND active = 1
+    </update>
+
+    <select id="findShortageForUpdate"
+            resultType="com.angsamo.erp.purchase.dto.ShortageMaterialRequestItem">
+        SELECT
+            mr.request_id AS requestId,
+            mr.production_plan_id AS productionPlanId,
+            mr.department_id AS departmentId,
+            mr.item_id AS itemId,
+            i.item_code AS itemCode,
+            i.item_name AS itemName,
+            i.unit,
+            mr.request_qty AS requestQty,
+            mr.issued_qty AS issuedQty,
+            (mr.request_qty - mr.issued_qty) AS shortageQty,
+            mr.required_date AS requiredDate,
+            mr.status,
+            mr.requested_by AS requestedBy,
+            mr.created_at AS createdAt
+        FROM material_request mr
+        INNER JOIN item i ON i.item_id = mr.item_id
+        WHERE mr.request_id = #{requestId}
+          AND mr.status = 'SHORTAGE'
+        FOR UPDATE
+    </select>
+
+    <select id="countActiveProcurementByRequest" resultType="int">
+        SELECT COUNT(*)
+        FROM procurement
+        WHERE material_request_id = #{materialRequestId}
+          AND status != 'CANCELLED'
+    </select>
+
+    <insert id="insertProcurement">
+        INSERT INTO procurement (
+            department_id,
+            material_request_id,
+            item_id,
+            request_qty,
+            required_date,
+            quote_deadline,
+            status,
+            created_by
+        )
+        SELECT
+            #{departmentId},
+            mr.request_id,
+            mr.item_id,
+            (mr.request_qty - mr.issued_qty),
+            mr.required_date,
+            #{quoteDeadline},
+            'REQUESTED',
+            #{createdBy}
+        FROM material_request mr
+        WHERE mr.request_id = #{materialRequestId}
+          AND mr.status = 'SHORTAGE'
+          AND (mr.request_qty - mr.issued_qty) > 0
+    </insert>
+
+    <update id="updateProcurement">
+        UPDATE procurement
+        SET
+            quote_deadline = #{quoteDeadline},
+            terms = NULLIF(#{terms}, '')
+        WHERE procurement_id = #{procurementId}
+          AND status = 'REQUESTED'
+        <if test="!admin">
+            AND department_id = #{departmentId}
+        </if>
+    </update>
+
+    <update id="cancelProcurement">
+        UPDATE procurement
+        SET status = 'CANCELLED'
+        WHERE procurement_id = #{procurementId}
+          AND status IN ('REQUESTED', 'QUOTING')
+        <if test="!admin">
+            AND department_id = #{departmentId}
+        </if>
+    </update>
+
+    <insert id="insertVendorQuote">
+        INSERT INTO vendor_quote (
+            procurement_id,
+            vendor_id,
+            status
+        )
+        SELECT
+            #{procurementId},
+            v.vendor_id,
+            'REQUESTED'
+        FROM vendor v
+        WHERE v.vendor_id = #{vendorId}
+          AND v.active = 1
+          AND NOT EXISTS (
+              SELECT 1
+              FROM vendor_quote vq
+              WHERE vq.procurement_id = #{procurementId}
+                AND vq.vendor_id = #{vendorId}
+          )
+    </insert>
+
+    <update id="updateProcurementToQuoting">
+        UPDATE procurement
+        SET status = 'QUOTING'
+        WHERE procurement_id = #{procurementId}
+          AND status = 'REQUESTED'
+        <if test="!admin">
+            AND department_id = #{departmentId}
+        </if>
+    </update>
+
+    <select id="findDepartmentIdByCode" resultType="long">
+        SELECT department_id
+        FROM department
+        WHERE department_code = #{departmentCode}
+    </select>
+
 </mapper>
+
