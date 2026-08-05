@@ -6,11 +6,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
 <mapper namespace="com.angsamo.erp.production.mapper.MaterialRequestMapper">
 
+    <!-- 자재요청 전체 목록 조회 -->
     <select id="findAll"
             resultType="com.angsamo.erp.production.domain.MaterialRequest">
 
         SELECT
-
             mr.request_id,
             mr.production_plan_id,
             mr.department_id,
@@ -47,9 +47,175 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         LEFT JOIN app_user processor
           ON processor.user_id = mr.processed_by
 
-        ORDER BY
-            mr.request_id DESC
+        ORDER BY mr.request_id DESC
+    </select>
 
+
+    <!-- 자재요청 상세 조회 -->
+    <select id="findById"
+            parameterType="long"
+            resultType="com.angsamo.erp.production.domain.MaterialRequest">
+
+        SELECT
+            mr.request_id,
+            mr.production_plan_id,
+            mr.department_id,
+            mr.item_id,
+            mr.request_qty,
+            mr.issued_qty,
+            mr.required_date,
+            mr.status,
+            mr.requested_by,
+            mr.processed_by,
+            mr.issued_at,
+            mr.created_at,
+            mr.updated_at,
+
+            i.item_code,
+            i.item_name,
+
+            d.department_name,
+
+            requester.user_name AS requested_by_name,
+            processor.user_name AS processed_by_name
+
+        FROM material_request mr
+
+        JOIN item i
+          ON i.item_id = mr.item_id
+
+        JOIN department d
+          ON d.department_id = mr.department_id
+
+        JOIN app_user requester
+          ON requester.user_id = mr.requested_by
+
+        LEFT JOIN app_user processor
+          ON processor.user_id = mr.processed_by
+
+        WHERE mr.request_id = #{requestId}
+    </select>
+
+
+    <!-- 같은 생산계획 + 같은 품목의 자재요청 중복 확인 -->
+    <select id="countByProductionPlanIdAndItemId"
+            resultType="int">
+
+        SELECT COUNT(*)
+
+        FROM material_request
+
+        WHERE production_plan_id = #{productionPlanId}
+          AND item_id = #{itemId}
+    </select>
+
+
+    <!-- 자재요청 등록 -->
+    <insert id="insert"
+            parameterType="com.angsamo.erp.production.domain.MaterialRequest"
+            useGeneratedKeys="true"
+            keyProperty="requestId"
+            keyColumn="request_id">
+
+        INSERT INTO material_request (
+            production_plan_id,
+            department_id,
+            item_id,
+            request_qty,
+            issued_qty,
+            required_date,
+            status,
+            requested_by
+        )
+        VALUES (
+            #{productionPlanId},
+            #{departmentId},
+            #{itemId},
+            #{requestQty},
+            0,
+            #{requiredDate},
+            #{status},
+            #{requestedBy}
+        )
+    </insert>
+
+
+    <!-- REQUESTED 상태 자재요청 수량 및 필요일 수정 -->
+    <update id="updateRequested"
+            parameterType="com.angsamo.erp.production.domain.MaterialRequest">
+
+        UPDATE material_request
+
+        SET
+            request_qty = #{requestQty},
+            required_date = #{requiredDate},
+            updated_at = CURRENT_TIMESTAMP
+
+        WHERE request_id = #{requestId}
+          AND status = 'REQUESTED'
+    </update>
+
+
+    <!-- REQUESTED 상태 자재요청 취소 -->
+    <update id="cancelRequested"
+            parameterType="long">
+
+        UPDATE material_request
+
+        SET
+            status = 'REJECTED',
+            updated_at = CURRENT_TIMESTAMP
+
+        WHERE request_id = #{requestId}
+          AND status = 'REQUESTED'
+    </update>
+
+
+    <!-- 특정 생산계획의 자재요청 목록 조회 -->
+    <select id="findByProductionPlanId"
+            parameterType="long"
+            resultType="com.angsamo.erp.production.domain.MaterialRequest">
+
+        SELECT
+            mr.request_id,
+            mr.production_plan_id,
+            mr.department_id,
+            mr.item_id,
+            mr.request_qty,
+            mr.issued_qty,
+            mr.required_date,
+            mr.status,
+            mr.requested_by,
+            mr.processed_by,
+            mr.issued_at,
+            mr.created_at,
+            mr.updated_at,
+
+            i.item_code,
+            i.item_name,
+
+            d.department_name,
+
+            requester.user_name AS requested_by_name,
+            processor.user_name AS processed_by_name
+
+        FROM material_request mr
+
+        JOIN item i
+          ON i.item_id = mr.item_id
+
+        JOIN department d
+          ON d.department_id = mr.department_id
+
+        JOIN app_user requester
+          ON requester.user_id = mr.requested_by
+
+        LEFT JOIN app_user processor
+          ON processor.user_id = mr.processed_by
+
+        WHERE mr.production_plan_id = #{productionPlanId}
+
+        ORDER BY mr.request_id ASC
     </select>
 
 </mapper>

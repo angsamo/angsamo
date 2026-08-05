@@ -9,7 +9,7 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
-    <title>BOM 수정</title>
+    <title>자재요청 수정</title>
 
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
           rel="stylesheet">
@@ -82,6 +82,18 @@
             border-radius: 5px;
         }
 
+        .readonly-value {
+            display: flex;
+            min-height: 42px;
+            align-items: center;
+            padding: 0 12px;
+            color: var(--text);
+            background: #f5f8fc;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            font-weight: 600;
+        }
+
         .item-code {
             color: var(--blue);
             font-weight: 700;
@@ -99,17 +111,16 @@
             font-size: 11px;
         }
 
-        .unit-badge {
+        .status-badge {
             display: inline-flex;
-            min-width: 44px;
+            min-width: 88px;
             align-items: center;
             justify-content: center;
-            margin-left: 8px;
-            padding: 4px 9px;
-            color: #14653f;
-            background: #ddf4e7;
+            padding: 5px 10px;
+            color: #155cb2;
+            background: #e2efff;
             border-radius: 999px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 700;
         }
 
@@ -139,8 +150,8 @@
 
         .secondary-button:hover {
             color: var(--blue);
-            border-color: var(--blue);
             background: #f8fbff;
+            border-color: var(--blue);
         }
 
         .error-notice {
@@ -181,9 +192,9 @@
 
         <section class="page-heading">
             <div>
-                <p class="eyebrow">DEVELOPMENT</p>
-                <h1>BOM 수정</h1>
-                <p>완제품의 구성 자재 필요 수량을 수정합니다.</p>
+                <p class="eyebrow">PRODUCTION</p>
+                <h1>자재요청 수정</h1>
+                <p>요청 수량과 필요일을 수정합니다.</p>
             </div>
         </section>
 
@@ -198,12 +209,12 @@
 
             <div class="panel-header">
                 <div>
-                    <p class="eyebrow">EDIT BOM</p>
-                    <h2>BOM 필요 수량 수정</h2>
+                    <p class="eyebrow">EDIT MATERIAL REQUEST</p>
+                    <h2>자재요청 정보 수정</h2>
                 </div>
             </div>
 
-            <form action="${pageContext.request.contextPath}/development/boms/${bom.bomId}/edit"
+            <form action="${pageContext.request.contextPath}/production/material-requests/${materialRequest.requestId}/edit"
                   method="post">
 
                 <div class="form-body">
@@ -211,75 +222,111 @@
                     <div class="notice">
                         <span class="material-symbols-outlined">info</span>
                         <p>
-                            완제품과 구성 자재는 변경할 수 없으며,
-                            필요 수량만 수정할 수 있습니다.
+                            요청 상태가 REQUESTED인 경우에만 요청 수량과 필요일을 수정할 수 있습니다.
+                            처리 수량과 처리 정보는 자재부서가 관리합니다.
                         </p>
                     </div>
 
                     <div class="form-grid">
 
                         <div class="form-field">
-                            <label>BOM 번호</label>
+                            <label>요청번호</label>
 
-                            <div class="readonly-box">
-                                ${bom.bomId}
+                            <div class="readonly-value">
+                                ${materialRequest.requestId}
                             </div>
                         </div>
 
                         <div class="form-field">
-                            <label>단위</label>
+                            <label>생산계획 번호</label>
+
+                            <div class="readonly-value">
+                                ${materialRequest.productionPlanId}
+                            </div>
+                        </div>
+
+                        <div class="form-field full-width">
+                            <label>요청 자재</label>
 
                             <div class="readonly-box">
-                                <span class="unit-badge">
-                                    <c:out value="${bom.componentUnit}" />
+                                <div class="item-code">
+                                    <c:out value="${materialRequest.itemCode}" />
+                                </div>
+
+                                <div class="item-name">
+                                    <c:out value="${materialRequest.itemName}" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label>요청 부서</label>
+
+                            <div class="readonly-value">
+                                <c:choose>
+                                    <c:when test="${empty materialRequest.departmentName}">
+                                        -
+                                    </c:when>
+
+                                    <c:otherwise>
+                                        <c:out value="${materialRequest.departmentName}" />
+                                    </c:otherwise>
+                                </c:choose>
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label>현재 상태</label>
+
+                            <div class="readonly-value">
+                                <span class="status-badge">
+                                    요청
                                 </span>
                             </div>
                         </div>
 
                         <div class="form-field full-width">
-                            <label>완제품</label>
-
-                            <div class="readonly-box">
-                                <div class="item-code">
-                                    <c:out value="${bom.parentItemCode}" />
-                                </div>
-
-                                <div class="item-name">
-                                    <c:out value="${bom.parentItemName}" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-field full-width">
-                            <label>구성 자재</label>
-
-                            <div class="readonly-box">
-                                <div class="item-code">
-                                    <c:out value="${bom.componentItemCode}" />
-                                </div>
-
-                                <div class="item-name">
-                                    <c:out value="${bom.componentItemName}" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-field full-width">
-                            <label for="requiredQty">
-                                필요 수량
+                            <label for="requestQty">
+                                요청 수량
                                 <span class="required">*</span>
                             </label>
 
+                            <fmt:formatNumber
+                                value="${materialRequest.requestQty}"
+                                type="number"
+                                minFractionDigits="0"
+                                maxFractionDigits="3"
+                                groupingUsed="false"
+                                var="formattedRequestQty" />
+
                             <input type="number"
-                                   id="requiredQty"
-                                   name="requiredQty"
-                                   value="<fmt:formatNumber value='${bom.requiredQty}' type='number' minFractionDigits='0' maxFractionDigits='3' groupingUsed='false' />"
+                                   id="requestQty"
+                                   name="requestQty"
+                                   value="${formattedRequestQty}"
                                    min="0.001"
                                    step="0.001"
+                                   placeholder="예: 200"
                                    required>
 
                             <p class="field-help">
-                                0보다 큰 값을 입력하세요.
+                                요청 수량은 0보다 커야 합니다.
+                            </p>
+                        </div>
+
+                        <div class="form-field full-width">
+                            <label for="requiredDate">
+                                필요일
+                                <span class="required">*</span>
+                            </label>
+
+                            <input type="date"
+                                   id="requiredDate"
+                                   name="requiredDate"
+                                   value="${materialRequest.requiredDate}"
+                                   required>
+
+                            <p class="field-help">
+                                자재가 필요한 날짜를 입력하세요.
                             </p>
                         </div>
 
@@ -288,7 +335,7 @@
                     <div class="form-actions">
 
                         <a class="secondary-button"
-                           href="${pageContext.request.contextPath}/development/boms/${bom.bomId}">
+                           href="${pageContext.request.contextPath}/production/material-requests/${materialRequest.requestId}">
 
                             <span class="material-symbols-outlined">close</span>
                             취소

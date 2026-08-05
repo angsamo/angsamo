@@ -8,7 +8,7 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
-    <title>생산계획 조회</title>
+    <title>생산계획 관리</title>
 
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
           rel="stylesheet">
@@ -17,34 +17,16 @@
           href="${pageContext.request.contextPath}/resources/css/common.css">
 
     <style>
-        .table-scroll {
-            width: 100%;
-            overflow-x: auto;
+        .message-notice {
+            color: #14653f;
+            background: #e5f7ed;
+            border-color: #b8e2c9;
         }
 
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .data-table th,
-        .data-table td {
-            padding: 14px 16px;
-            border-bottom: 1px solid var(--border);
-            text-align: left;
-            vertical-align: middle;
-            white-space: nowrap;
-        }
-
-        .data-table th {
-            color: var(--muted);
-            background: #f8fafc;
-            font-size: 12px;
-            font-weight: 700;
-        }
-
-        .data-table tbody tr:hover {
-            background: #f8fbff;
+        .error-notice {
+            color: #9f1d1d;
+            background: #fff0f0;
+            border-color: #f1b8b8;
         }
 
         .item-code {
@@ -100,6 +82,31 @@
             background: #eef2f7;
         }
 
+        .action-button {
+            display: inline-flex;
+            height: 32px;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            padding: 0 10px;
+            color: var(--text);
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .action-button:hover {
+            color: var(--blue);
+            background: #f8fbff;
+            border-color: var(--blue);
+        }
+
+        .action-button .material-symbols-outlined {
+            font-size: 17px;
+        }
+
         .empty-state {
             padding: 56px 20px;
             color: var(--muted);
@@ -114,7 +121,20 @@
         }
 
         .empty-state p {
-            margin: 0;
+            margin: 0 0 16px;
+        }
+
+        @media (max-width: 760px) {
+            .page-heading {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .page-heading .primary-button {
+                width: 100%;
+                justify-content: center;
+            }
         }
     </style>
 </head>
@@ -130,40 +150,102 @@
     <main class="workspace">
 
         <section class="page-heading">
+
             <div>
                 <p class="eyebrow">PRODUCTION</p>
-                <h1>생산계획 조회</h1>
+                <h1>생산계획 관리</h1>
+
                 <p>
-                    생산부서의 품목별 생산계획과 진행 상태를 조회합니다.
+                    생산부서의 품목별 생산계획과 진행 상태를 관리합니다.
                 </p>
             </div>
+
+            <a class="primary-button"
+               href="${pageContext.request.contextPath}/production/plans/new">
+
+                <span class="material-symbols-outlined">add</span>
+                <span>생산계획 등록</span>
+            </a>
+
         </section>
 
-        <section class="panel">
+        <c:if test="${not empty message}">
+            <div class="notice message-notice">
+
+                <span class="material-symbols-outlined">
+                    check_circle
+                </span>
+
+                <p>
+                    <c:out value="${message}" />
+                </p>
+
+            </div>
+        </c:if>
+
+        <c:if test="${not empty errorMessage}">
+            <div class="notice error-notice">
+
+                <span class="material-symbols-outlined">
+                    error
+                </span>
+
+                <p>
+                    <c:out value="${errorMessage}" />
+                </p>
+
+            </div>
+        </c:if>
+
+        <section class="panel table-panel">
 
             <div class="panel-header">
+
                 <div>
                     <p class="eyebrow">PRODUCTION PLAN LIST</p>
                     <h2>전체 생산계획</h2>
                 </div>
+
+                <span class="list-count">
+                    총
+                    <strong>
+                        <c:out value="${empty productionPlans ? 0 : productionPlans.size()}" />
+                    </strong>
+                    건
+                </span>
+
             </div>
 
             <c:choose>
 
                 <c:when test="${empty productionPlans}">
+
                     <div class="empty-state">
+
                         <span class="material-symbols-outlined">
                             calendar_month
                         </span>
 
                         <p>등록된 생산계획이 없습니다.</p>
+
+                        <a class="primary-button"
+                           href="${pageContext.request.contextPath}/production/plans/new"
+                           style="display:inline-flex;">
+
+                            <span class="material-symbols-outlined">add</span>
+                            <span>첫 생산계획 등록</span>
+                        </a>
+
                     </div>
+
                 </c:when>
 
                 <c:otherwise>
+
                     <div class="table-scroll">
 
                         <table class="data-table">
+
                             <thead>
                                 <tr>
                                     <th>계획번호</th>
@@ -175,15 +257,20 @@
                                     <th>상태</th>
                                     <th>등록자</th>
                                     <th>등록일</th>
+                                    <th>관리</th>
                                 </tr>
                             </thead>
 
                             <tbody>
+
                                 <c:forEach var="plan"
                                            items="${productionPlans}">
 
                                     <tr>
-                                        <td>${plan.productionPlanId}</td>
+
+                                        <td>
+                                            ${plan.productionPlanId}
+                                        </td>
 
                                         <td>
                                             <c:choose>
@@ -192,18 +279,18 @@
                                                 </c:when>
 
                                                 <c:otherwise>
-                                                    ${plan.departmentName}
+                                                    <c:out value="${plan.departmentName}" />
                                                 </c:otherwise>
                                             </c:choose>
                                         </td>
 
                                         <td>
                                             <div class="item-code">
-                                                ${plan.itemCode}
+                                                <c:out value="${plan.itemCode}" />
                                             </div>
 
                                             <div class="item-name">
-                                                ${plan.itemName}
+                                                <c:out value="${plan.itemName}" />
                                             </div>
                                         </td>
 
@@ -211,12 +298,18 @@
                                             ${plan.productionQty}
                                         </td>
 
-                                        <td>${plan.startDate}</td>
-
-                                        <td>${plan.dueDate}</td>
+                                        <td>
+                                            ${plan.startDate}
+                                        </td>
 
                                         <td>
+                                            ${plan.dueDate}
+                                        </td>
+
+                                        <td>
+
                                             <c:choose>
+
                                                 <c:when test="${plan.status == 'PLANNED'}">
                                                     <span class="status-badge planned">
                                                         계획
@@ -243,10 +336,12 @@
 
                                                 <c:otherwise>
                                                     <span class="status-badge unknown">
-                                                        ${plan.status}
+                                                        <c:out value="${plan.status}" />
                                                     </span>
                                                 </c:otherwise>
+
                                             </c:choose>
+
                                         </td>
 
                                         <td>
@@ -256,19 +351,36 @@
                                                 </c:when>
 
                                                 <c:otherwise>
-                                                    ${plan.createdByName}
+                                                    <c:out value="${plan.createdByName}" />
                                                 </c:otherwise>
                                             </c:choose>
                                         </td>
 
-                                        <td>${plan.createdAt}</td>
+                                        <td>
+                                            ${plan.createdAt}
+                                        </td>
+
+                                        <td>
+                                            <a class="action-button"
+                                               href="${pageContext.request.contextPath}/production/plans/${plan.productionPlanId}">
+
+                                                <span class="material-symbols-outlined">
+                                                    visibility
+                                                </span>
+
+                                                상세
+                                            </a>
+                                        </td>
+
                                     </tr>
 
                                 </c:forEach>
+
                             </tbody>
                         </table>
 
                     </div>
+
                 </c:otherwise>
 
             </c:choose>

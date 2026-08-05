@@ -8,7 +8,7 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
-    <title>BOM 조회</title>
+    <title>BOM 관리</title>
 
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
           rel="stylesheet">
@@ -45,34 +45,16 @@
             font-size: 12px;
         }
 
-        .table-scroll {
-            width: 100%;
-            overflow-x: auto;
+        .message-notice {
+            color: #14653f;
+            background: #e5f7ed;
+            border-color: #b8e2c9;
         }
 
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .data-table th,
-        .data-table td {
-            padding: 14px 16px;
-            border-bottom: 1px solid var(--border);
-            text-align: left;
-            vertical-align: middle;
-            white-space: nowrap;
-        }
-
-        .data-table th {
-            color: var(--muted);
-            background: #f8fafc;
-            font-size: 12px;
-            font-weight: 700;
-        }
-
-        .data-table tbody tr:hover {
-            background: #f8fbff;
+        .error-notice {
+            color: #9f1d1d;
+            background: #fff0f0;
+            border-color: #f1b8b8;
         }
 
         .item-code {
@@ -104,33 +86,48 @@
             font-weight: 700;
         }
 
-        .empty-state {
-            padding: 56px 20px;
-            color: var(--muted);
-            text-align: center;
+        .table-action-group {
+            display: flex;
+            align-items: center;
+            gap: 7px;
         }
 
-        .empty-state .material-symbols-outlined {
-            display: block;
-            margin-bottom: 10px;
-            color: #9aa6b5;
-            font-size: 44px;
+        .table-action {
+            display: inline-flex;
+            height: 32px;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 0 10px;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            background: var(--white);
+            color: var(--text);
+            font-size: 12px;
+            font-weight: 700;
+            transition: 150ms ease;
         }
 
-        .empty-state p {
-            margin: 0;
+        .table-action:hover {
+            color: var(--blue);
+            background: #f8fbff;
+            border-color: var(--blue);
         }
 
-        .action-link {
+        .table-action .material-symbols-outlined {
+            font-size: 17px;
+        }
+
+        .parent-link {
             color: var(--blue);
             font-weight: 700;
         }
 
-        .action-link:hover {
+        .parent-link:hover {
             text-decoration: underline;
         }
 
-        .back-button {
+        .secondary-button {
             display: inline-flex;
             height: 40px;
             align-items: center;
@@ -144,10 +141,48 @@
             font-weight: 700;
         }
 
-        .back-button:hover {
+        .secondary-button:hover {
             color: var(--blue);
-            border-color: var(--blue);
             background: #f8fbff;
+            border-color: var(--blue);
+        }
+
+        .empty-box {
+            padding: 56px 20px;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .empty-box .material-symbols-outlined {
+            display: block;
+            margin-bottom: 10px;
+            color: #9aa6b5;
+            font-size: 44px;
+        }
+
+        .empty-box p {
+            margin: 0 0 16px;
+        }
+
+        @media (max-width: 760px) {
+            .page-heading {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .page-heading > a {
+                width: 100%;
+            }
+
+            .table-action-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .table-action {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -165,41 +200,76 @@
         <section class="page-heading">
             <div>
                 <p class="eyebrow">DEVELOPMENT</p>
-                <h1>BOM 조회</h1>
+                <h1>BOM 관리</h1>
 
                 <c:choose>
                     <c:when test="${not empty parentItem}">
-                        <p>
-                            선택한 완제품에 필요한 구성 자재를 조회합니다.
-                        </p>
+                        <p>선택한 완제품의 구성 자재와 필요 수량을 조회합니다.</p>
                     </c:when>
 
                     <c:otherwise>
-                        <p>
-                            전체 완제품과 구성 자재의 BOM 정보를 조회합니다.
-                        </p>
+                        <p>완제품별 구성 자재와 필요 수량을 관리합니다.</p>
                     </c:otherwise>
                 </c:choose>
             </div>
 
-            <c:if test="${not empty parentItem}">
-                <a class="back-button"
-                   href="${pageContext.request.contextPath}/development/boms">
+            <c:choose>
+                <c:when test="${not empty parentItem}">
+                    <a class="secondary-button"
+                       href="${pageContext.request.contextPath}/development/boms">
 
-                    <span class="material-symbols-outlined">arrow_back</span>
-                    전체 BOM
-                </a>
-            </c:if>
+                        <span class="material-symbols-outlined">
+                            arrow_back
+                        </span>
+
+                        전체 BOM
+                    </a>
+                </c:when>
+
+                <c:otherwise>
+                    <a class="primary-button"
+                       href="${pageContext.request.contextPath}/development/boms/new">
+
+                        <span class="material-symbols-outlined">
+                            add
+                        </span>
+
+                        <span>BOM 등록</span>
+                    </a>
+                </c:otherwise>
+            </c:choose>
         </section>
+
+        <c:if test="${not empty message}">
+            <div class="notice message-notice">
+                <span class="material-symbols-outlined">
+                    check_circle
+                </span>
+
+                <p>${message}</p>
+            </div>
+        </c:if>
+
+        <c:if test="${not empty errorMessage}">
+            <div class="notice error-notice">
+                <span class="material-symbols-outlined">
+                    error
+                </span>
+
+                <p>${errorMessage}</p>
+            </div>
+        </c:if>
 
         <c:if test="${not empty parentItem}">
             <div class="summary-box">
-                <span class="material-symbols-outlined">inventory</span>
+                <span class="material-symbols-outlined">
+                    inventory_2
+                </span>
 
                 <div>
                     <strong>
-                        ${parentItem.itemName}
-                        (${parentItem.itemCode})
+                        <c:out value="${parentItem.itemName}" />
+                        (<c:out value="${parentItem.itemCode}" />)
                     </strong>
 
                     <p>
@@ -209,7 +279,7 @@
             </div>
         </c:if>
 
-        <section class="panel">
+        <section class="panel table-panel">
 
             <div class="panel-header">
                 <div>
@@ -221,21 +291,39 @@
                         </c:when>
 
                         <c:otherwise>
-                            <h2>전체 BOM</h2>
+                            <h2>전체 BOM 목록</h2>
                         </c:otherwise>
                     </c:choose>
                 </div>
+
+                <span class="list-count">
+                    총
+                    <strong>
+                        <c:out value="${empty boms ? 0 : boms.size()}" />
+                    </strong>
+                    건
+                </span>
             </div>
 
             <c:choose>
-
                 <c:when test="${empty boms}">
-                    <div class="empty-state">
+                    <div class="empty-box">
                         <span class="material-symbols-outlined">
                             account_tree
                         </span>
 
                         <p>등록된 BOM 정보가 없습니다.</p>
+
+                        <a class="primary-button"
+                           href="${pageContext.request.contextPath}/development/boms/new"
+                           style="display:inline-flex;">
+
+                            <span class="material-symbols-outlined">
+                                add
+                            </span>
+
+                            <span>첫 BOM 등록</span>
+                        </a>
                     </div>
                 </c:when>
 
@@ -250,33 +338,39 @@
                                     <th>구성 자재</th>
                                     <th>필요 수량</th>
                                     <th>단위</th>
-                                    <th>완제품별 조회</th>
                                     <th>등록일</th>
+                                    <th>관리</th>
                                 </tr>
                             </thead>
 
                             <tbody>
-                                <c:forEach var="bom" items="${boms}">
+                                <c:forEach var="bom"
+                                           items="${boms}">
+
                                     <tr>
                                         <td>${bom.bomId}</td>
 
                                         <td>
-                                            <div class="item-code">
-                                                ${bom.parentItemCode}
-                                            </div>
+                                            <a class="parent-link"
+                                               href="${pageContext.request.contextPath}/development/boms/parent/${bom.parentItemId}">
 
-                                            <div class="item-name">
-                                                ${bom.parentItemName}
-                                            </div>
+                                                <div class="item-code">
+                                                    <c:out value="${bom.parentItemCode}" />
+                                                </div>
+
+                                                <div class="item-name">
+                                                    <c:out value="${bom.parentItemName}" />
+                                                </div>
+                                            </a>
                                         </td>
 
                                         <td>
                                             <div class="item-code">
-                                                ${bom.componentItemCode}
+                                                <c:out value="${bom.componentItemCode}" />
                                             </div>
 
                                             <div class="item-name">
-                                                ${bom.componentItemName}
+                                                <c:out value="${bom.componentItemName}" />
                                             </div>
                                         </td>
 
@@ -286,18 +380,37 @@
 
                                         <td>
                                             <span class="unit-badge">
-                                                ${bom.componentUnit}
+                                                <c:out value="${bom.componentUnit}" />
                                             </span>
                                         </td>
 
-                                        <td>
-                                            <a class="action-link"
-                                               href="${pageContext.request.contextPath}/development/boms/parent/${bom.parentItemId}">
-                                                구성 자재 보기
-                                            </a>
-                                        </td>
-
                                         <td>${bom.createdAt}</td>
+
+                                        <td>
+                                            <div class="table-action-group">
+
+                                                <a class="table-action"
+                                                   href="${pageContext.request.contextPath}/development/boms/${bom.bomId}">
+
+                                                    <span class="material-symbols-outlined">
+                                                        visibility
+                                                    </span>
+
+                                                    상세
+                                                </a>
+
+                                                <a class="table-action"
+                                                   href="${pageContext.request.contextPath}/development/boms/${bom.bomId}/edit">
+
+                                                    <span class="material-symbols-outlined">
+                                                        edit
+                                                    </span>
+
+                                                    수정
+                                                </a>
+
+                                            </div>
+                                        </td>
                                     </tr>
                                 </c:forEach>
                             </tbody>
@@ -305,7 +418,6 @@
 
                     </div>
                 </c:otherwise>
-
             </c:choose>
 
         </section>

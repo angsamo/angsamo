@@ -8,7 +8,7 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
-    <title>BOM 등록</title>
+    <title>생산계획 등록</title>
 
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
           rel="stylesheet">
@@ -89,6 +89,18 @@
             font-weight: 600;
         }
 
+        .status-box {
+            display: flex;
+            min-height: 42px;
+            align-items: center;
+            padding: 0 12px;
+            color: #155cb2;
+            background: #e2efff;
+            border: 1px solid #b8d1f6;
+            border-radius: 5px;
+            font-weight: 700;
+        }
+
         .form-actions {
             display: flex;
             justify-content: flex-end;
@@ -115,8 +127,8 @@
 
         .secondary-button:hover {
             color: var(--blue);
-            border-color: var(--blue);
             background: #f8fbff;
+            border-color: var(--blue);
         }
 
         .primary-button:disabled {
@@ -161,13 +173,13 @@
 
     <main class="workspace">
 
-        <section class="page-heading">
-            <div>
-                <p class="eyebrow">DEVELOPMENT</p>
-                <h1>BOM 등록</h1>
-                <p>완제품에 필요한 구성 자재와 필요 수량을 등록합니다.</p>
-            </div>
-        </section>
+		<section class="page-heading">
+		    <div>
+		        <p class="eyebrow">PRODUCTION</p>
+		        <h1>생산계획 등록</h1>
+		        <p>생산할 완제품과 생산 수량, 작업 일정을 등록합니다.</p>
+		    </div>
+		</section>
 
         <c:if test="${not empty errorMessage}">
             <div class="notice error-notice">
@@ -180,12 +192,12 @@
 
             <div class="panel-header">
                 <div>
-                    <p class="eyebrow">NEW BOM</p>
-                    <h2>BOM 기본정보 입력</h2>
+                    <p class="eyebrow">NEW PRODUCTION PLAN</p>
+                    <h2>생산계획 기본정보 입력</h2>
                 </div>
             </div>
 
-            <form action="${pageContext.request.contextPath}/development/boms"
+            <form action="${pageContext.request.contextPath}/production/plans"
                   method="post">
 
                 <div class="form-body">
@@ -194,39 +206,38 @@
                         <span class="material-symbols-outlined">info</span>
 
                         <p>
-                            같은 완제품과 구성 자재 조합은 중복 등록할 수 없습니다.
-                            완제품 1개를 생산할 때 필요한 수량을 입력해 주세요.
+                            생산계획에는 사용 중인 완제품만 선택할 수 있으며,
+                            시작일은 완료 예정일보다 늦을 수 없습니다.
                         </p>
                     </div>
 
                     <div class="form-grid">
 
                         <div class="form-field full-width">
-                            <label for="parentItemId">
-                                완제품
+                            <label for="itemId">
+                                생산 완제품
                                 <span class="required">*</span>
                             </label>
 
-                            <select id="parentItemId"
-                                    name="parentItemId"
+                            <select id="itemId"
+                                    name="itemId"
                                     required>
 
-                                <option value="">완제품을 선택하세요</option>
+                                <option value="">생산할 완제품을 선택하세요</option>
 
                                 <c:forEach var="product"
                                            items="${productItems}">
 
                                     <option value="${product.itemId}"
-                                            ${bom.parentItemId == product.itemId
-                                                ? 'selected'
-                                                : ''}>
+                                        <c:if test="${productionPlan.itemId == product.itemId}">
+                                            selected
+                                        </c:if>>
 
                                         <c:out value="${product.itemCode}" />
                                         -
                                         <c:out value="${product.itemName}" />
 
                                     </option>
-
                                 </c:forEach>
                             </select>
 
@@ -243,113 +254,82 @@
                         </div>
 
                         <div class="form-field full-width">
-                            <label for="componentItemId">
-                                구성 자재
-                                <span class="required">*</span>
-                            </label>
-
-                            <select id="componentItemId"
-                                    name="componentItemId"
-                                    required>
-
-                                <option value="">구성 자재를 선택하세요</option>
-
-                                <c:forEach var="material"
-                                           items="${materialItems}">
-
-                                    <option value="${material.itemId}"
-                                            ${bom.componentItemId == material.itemId
-                                                ? 'selected'
-                                                : ''}>
-
-                                        <c:out value="${material.itemCode}" />
-                                        -
-                                        <c:out value="${material.itemName}" />
-                                        (
-                                        <c:out value="${material.unit}" />
-                                        )
-
-                                    </option>
-
-                                </c:forEach>
-                            </select>
-
-                            <c:if test="${empty materialItems}">
-                                <p class="empty-message">
-                                    사용 가능한 구성 자재가 없습니다.
-                                    품목 관리에서 자재를 먼저 등록해 주세요.
-                                </p>
-                            </c:if>
-
-                            <p class="field-help">
-                                사용 중인 MATERIAL 유형 품목만 표시됩니다.
-                            </p>
-                        </div>
-
-                        <div class="form-field full-width">
-                            <label for="requiredQty">
-                                필요 수량
+                            <label for="productionQty">
+                                생산 수량
                                 <span class="required">*</span>
                             </label>
 
                             <input type="number"
-                                   id="requiredQty"
-                                   name="requiredQty"
-                                   value="${bom.requiredQty}"
+                                   id="productionQty"
+                                   name="productionQty"
+                                   value="${productionPlan.productionQty}"
                                    min="0.001"
                                    step="0.001"
-                                   placeholder="예: 2.000"
+                                   placeholder="예: 100"
                                    required>
 
                             <p class="field-help">
-                                완제품 1개 생산에 필요한 구성 자재 수량입니다.
-                                0보다 큰 값을 입력하세요.
+                                생산할 완제품의 총수량을 입력하세요.
+                            </p>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="startDate">
+                                생산 시작일
+                                <span class="required">*</span>
+                            </label>
+
+                            <input type="date"
+                                   id="startDate"
+                                   name="startDate"
+                                   value="${productionPlan.startDate}"
+                                   required>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="dueDate">
+                                완료 예정일
+                                <span class="required">*</span>
+                            </label>
+
+                            <input type="date"
+                                   id="dueDate"
+                                   name="dueDate"
+                                   value="${productionPlan.dueDate}"
+                                   required>
+                        </div>
+
+                        <div class="form-field full-width">
+                            <label>초기 상태</label>
+
+                            <div class="status-box">
+                                계획
+                            </div>
+
+                            <p class="field-help">
+                                새로운 생산계획은 PLANNED 상태로 자동 등록됩니다.
                             </p>
                         </div>
 
                     </div>
 
-                    <div class="form-actions">
+					<div class="form-actions">
 
-                        <a class="secondary-button"
-                           href="${pageContext.request.contextPath}/development/boms">
+					    <a class="secondary-button"
+					       href="${pageContext.request.contextPath}/production/plans">
 
-                            <span class="material-symbols-outlined">close</span>
-                            취소
-                        </a>
+					        <span class="material-symbols-outlined">close</span>
+					        취소
+					    </a>
 
-                        <c:choose>
-                            <c:when test="${empty productItems}">
-                                <button class="primary-button"
-                                        type="button"
-                                        disabled>
+					    <button class="primary-button"
+					            type="submit">
 
-                                    <span class="material-symbols-outlined">save</span>
-                                    BOM 등록
-                                </button>
-                            </c:when>
+					        <span class="material-symbols-outlined">save</span>
+					        생산계획 등록
+					    </button>
 
-                            <c:when test="${empty materialItems}">
-                                <button class="primary-button"
-                                        type="button"
-                                        disabled>
-
-                                    <span class="material-symbols-outlined">save</span>
-                                    BOM 등록
-                                </button>
-                            </c:when>
-
-                            <c:otherwise>
-                                <button class="primary-button"
-                                        type="submit">
-
-                                    <span class="material-symbols-outlined">save</span>
-                                    BOM 등록
-                                </button>
-                            </c:otherwise>
-                        </c:choose>
-
-                    </div>
+					</div>
 
                 </div>
             </form>

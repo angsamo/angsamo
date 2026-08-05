@@ -6,11 +6,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
 <mapper namespace="com.angsamo.erp.production.mapper.ProductionPlanMapper">
 
+    <!-- 생산계획 전체 목록 조회 -->
     <select id="findAll"
             resultType="com.angsamo.erp.production.domain.ProductionPlan">
 
         SELECT
-
             pp.production_plan_id,
             pp.department_id,
             pp.item_id,
@@ -42,7 +42,102 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
         ORDER BY
             pp.production_plan_id DESC
-
     </select>
+
+
+    <!-- 생산계획 상세 조회 -->
+    <select id="findById"
+            parameterType="long"
+            resultType="com.angsamo.erp.production.domain.ProductionPlan">
+
+        SELECT
+            pp.production_plan_id,
+            pp.department_id,
+            pp.item_id,
+            pp.production_qty,
+            pp.start_date,
+            pp.due_date,
+            pp.status,
+            pp.created_by,
+            pp.created_at,
+            pp.updated_at,
+
+            i.item_code,
+            i.item_name,
+
+            d.department_name,
+
+            u.user_name AS created_by_name
+
+        FROM production_plan pp
+
+        JOIN item i
+          ON i.item_id = pp.item_id
+
+        JOIN department d
+          ON d.department_id = pp.department_id
+
+        JOIN app_user u
+          ON u.user_id = pp.created_by
+
+        WHERE pp.production_plan_id = #{productionPlanId}
+    </select>
+
+
+    <!-- 생산계획 등록 -->
+    <insert id="insert"
+            parameterType="com.angsamo.erp.production.domain.ProductionPlan"
+            useGeneratedKeys="true"
+            keyProperty="productionPlanId"
+            keyColumn="production_plan_id">
+
+        INSERT INTO production_plan (
+            department_id,
+            item_id,
+            production_qty,
+            start_date,
+            due_date,
+            status,
+            created_by
+        )
+        VALUES (
+            #{departmentId},
+            #{itemId},
+            #{productionQty},
+            #{startDate},
+            #{dueDate},
+            #{status},
+            #{createdBy}
+        )
+    </insert>
+
+
+    <!-- 생산 수량과 일정 수정 -->
+    <update id="update"
+            parameterType="com.angsamo.erp.production.domain.ProductionPlan">
+
+        UPDATE production_plan
+
+        SET
+            production_qty = #{productionQty},
+            start_date = #{startDate},
+            due_date = #{dueDate},
+            updated_at = CURRENT_TIMESTAMP
+
+        WHERE production_plan_id = #{productionPlanId}
+    </update>
+
+
+    <!-- 생산계획 상태 변경 -->
+    <update id="updateStatus">
+
+        UPDATE production_plan
+
+        SET
+            status = #{status},
+            updated_at = CURRENT_TIMESTAMP
+
+        WHERE production_plan_id = #{productionPlanId}
+    </update>
 
 </mapper>

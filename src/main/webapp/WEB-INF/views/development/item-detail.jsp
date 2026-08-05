@@ -404,13 +404,13 @@
 
                         <form action="${pageContext.request.contextPath}/development/items/${item.itemId}/delete"
                               method="post"
-                              onsubmit="return confirm('정말 이 품목을 삭제하시겠습니까?');">
+                              onsubmit="return confirm('이 품목을 미사용 처리하시겠습니까?');">
 
                             <button class="action-button delete-button"
                                     type="submit">
 
                                 <span class="material-symbols-outlined">delete</span>
-                                삭제
+                                미사용 처리
                             </button>
 
                         </form>
