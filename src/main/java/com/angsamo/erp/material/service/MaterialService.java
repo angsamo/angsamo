@@ -1,6 +1,5 @@
 package com.angsamo.erp.material.service;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -11,7 +10,7 @@ import com.angsamo.erp.material.mapper.MaterialMapper;
 
 @Service
 public class MaterialService {
-	private static final List<String> RETURN_STATUSES = List.of("REQUESTED", "RESUPPLYING", "COMPLETED");
+	private static final List<String> RETURN_STATUSES = List.of("RETURN_REQUESTED", "RESUPPLYING", "RETURN_COMPLETED");
 	private final MaterialMapper mapper;
 
 	public MaterialService(MaterialMapper mapper) { this.mapper = mapper; }
@@ -29,31 +28,34 @@ public class MaterialService {
 	@Transactional(readOnly = true) public Map<String, Object> statementPrint(long id) { return required(mapper.findStatementPrint(id), "거래명세서를 찾을 수 없습니다."); }
 
 	@Transactional
-	public void inspect(long shipmentId, int acceptedQty, int rejectedQty, String reason,
+	public void inspect(long procurementId, int acceptedQty, int rejectedQty, String reason,
 			boolean orderConfirmed, boolean itemChecked, boolean qualityChecked, long userId) {
 		if (!orderConfirmed || !itemChecked || !qualityChecked) {
 			throw new IllegalArgumentException("발주서, 실물 품목, 품질 상태를 모두 확인해야 검수를 완료할 수 있습니다.");
 		}
-		if (acceptedQty < 0 || rejectedQty < 0 || acceptedQty + rejectedQty <= 0) throw new IllegalArgumentException("검수 수량을 확인해 주세요.");
-		Map<String, Object> shipment = required(mapper.lockShipment(shipmentId), "출하 정보를 찾을 수 없습니다.");
-		if (((Number) shipment.get("alreadyReceived")).intValue() > 0) throw new IllegalStateException("이미 입고 검수가 완료된 출하입니다.");
-		int shipmentQty = ((Number) shipment.get("shipmentQty")).intValue();
-		if (acceptedQty + rejectedQty != shipmentQty) throw new IllegalArgumentException("정상 수량과 불량 수량의 합은 출하 수량과 같아야 합니다.");
-		if (rejectedQty > 0 && (reason == null || reason.isBlank())) throw new IllegalArgumentException("불량 수량이 있으면 반품 사유를 입력해 주세요.");
-		long poId = ((Number) shipment.get("poId")).longValue();
-		String result = rejectedQty > 0 ? "RETURNED" : "ACCEPTED";
-		mapper.insertReceiving(shipmentId, poId, result, shipmentQty, acceptedQty, rejectedQty, reason, userId);
-		long receivingId = mapper.lastInsertId();
-		String itemCode = String.valueOf(shipment.get("itemCode"));
-		if (acceptedQty > 0) {
-			Map<String, Object> inventory = mapper.lockInventory(itemCode);
-			int before = inventory == null ? 0 : ((Number) inventory.get("availableQty")).intValue();
-			mapper.upsertInventory(itemCode, acceptedQty, shipment.get("supplyPrice"));
-			mapper.insertInventoryHistory(itemCode, acceptedQty, before, before + acceptedQty, receivingId, userId);
+		if (acceptedQty < 0 || rejectedQty < 0 || acceptedQty + rejectedQty <= 0) {
+			throw new IllegalArgumentException("검수 수량을 확인해 주세요.");
 		}
-		if (rejectedQty > 0) mapper.insertReturn(receivingId, String.valueOf(shipment.get("vendorId")), itemCode, rejectedQty, reason.trim(), userId);
-		mapper.updatePoProgress(poId);
-		mapper.completeProcurementPlan(poId);
+		Map<String, Object> procurement = required(mapper.lockShipment(procurementId), "조달 정보를 찾을 수 없습니다.");
+		if (((Number) procurement.get("alreadyReceived")).intValue() > 0) {
+			throw new IllegalStateException("이미 입고 검수가 완료된 조달 건입니다.");
+		}
+		int orderQty = ((Number) procurement.get("shipmentQty")).intValue();
+		if (acceptedQty + rejectedQty != orderQty) {
+			throw new IllegalArgumentException("정상 수량과 불량 수량의 합은 발주 수량과 같아야 합니다.");
+		}
+		if (rejectedQty > 0 && (reason == null || reason.isBlank())) {
+			throw new IllegalArgumentException("불량 수량이 있으면 반품 사유를 입력해 주세요.");
+		}
+		String result = rejectedQty == 0 ? "ACCEPTED" : acceptedQty == 0 ? "REJECTED" : "PARTIAL";
+		if (mapper.completeReceiving(procurementId, result, acceptedQty, rejectedQty, reason) != 1) {
+			throw new IllegalStateException("입고 상태가 변경되었습니다. 다시 확인해 주세요.");
+		}
+		if (acceptedQty > 0) {
+			mapper.insertStockMovement(((Number) procurement.get("departmentId")).longValue(),
+					((Number) procurement.get("itemId")).longValue(), "IN", acceptedQty,
+					"PROCUREMENT", procurementId, userId);
+		}
 	}
 
 	@Transactional
@@ -72,27 +74,27 @@ public class MaterialService {
 		int available = ((Number) row.get("availableQty")).intValue();
 		if (qty > requested - issued) throw new IllegalArgumentException("남은 요청 수량보다 많이 출고할 수 없습니다.");
 		if (qty > available) throw new IllegalArgumentException("가용 재고가 부족합니다. 현재고: " + available);
-		int totalIssued = issued + qty;
-		String status = totalIssued == requested ? "COMPLETED" : "PARTIAL";
-		String itemCode = String.valueOf(row.get("itemCode"));
-		if (mapper.decreaseInventory(itemCode, qty, row.get("unitPrice")) != 1) throw new IllegalStateException("재고 차감 중 수량이 변경되었습니다. 다시 확인해 주세요.");
-		mapper.updateIssue(issueId, qty, status, userId);
-		mapper.insertIssueInventoryHistory(itemCode, qty, available, available - qty, issueId, userId);
-		if (row.get("requestId") != null) mapper.updateProductionRequest(((Number) row.get("requestId")).longValue(), status);
+		String status = issued + qty == requested ? "COMPLETED" : "PARTIAL";
+		mapper.insertStockMovement(((Number) row.get("departmentId")).longValue(),
+				((Number) row.get("itemId")).longValue(), "OUT", qty,
+				"MATERIAL_REQUEST", issueId, userId);
+		if (mapper.updateIssue(issueId, qty, status, userId) != 1) {
+			throw new IllegalStateException("출고 요청 상태가 변경되었습니다. 다시 확인해 주세요.");
+		}
 	}
 
-	@Transactional
-	public void issueStatement(long receivingId) {
-		Map<String, Object> row = required(mapper.findStatementCandidate(receivingId), "발행 가능한 입고 건이 아닙니다.");
-		if (row.get("contractId") == null) throw new IllegalStateException("해당 발주에 연결된 계약이 없어 거래명세서를 발행할 수 없습니다.");
-		mapper.insertStatementPrep(((Number) row.get("contractId")).longValue());
-		long prepId = mapper.lastInsertId();
-		mapper.insertStatement(receivingId, prepId, String.valueOf(row.get("vendorId")),
-				((Number) row.get("acceptedQty")).intValue(), row.getOrDefault("supplyPrice", BigDecimal.ZERO));
+	@Transactional public void issueStatement(long procurementId) {
+		if (mapper.issueStatement(procurementId) != 1) throw new IllegalStateException("발행 가능한 입고 건이 아닙니다.");
+	}
+	@Transactional public void notifyStatement(long id) {
+		if (mapper.notifyStatement(id) != 1) throw new IllegalArgumentException("거래명세서를 찾을 수 없습니다.");
+	}
+	@Transactional public void closeOrder(long poId) {
+		if (mapper.closePurchaseOrder(poId) != 1) throw new IllegalStateException("입고 완료된 조달 건만 마감할 수 있습니다.");
 	}
 
-	@Transactional public void notifyStatement(long id) { if (mapper.notifyStatement(id) != 1) throw new IllegalArgumentException("거래명세서를 찾을 수 없습니다."); }
-	@Transactional public void closeOrder(long poId) { if (mapper.closePurchaseOrder(poId) != 1) throw new IllegalStateException("입고와 거래명세서 발행이 완료된 발주만 마감할 수 있습니다."); }
-
-	private Map<String, Object> required(Map<String, Object> value, String message) { if (value == null) throw new IllegalArgumentException(message); return value; }
+	private Map<String, Object> required(Map<String, Object> value, String message) {
+		if (value == null) throw new IllegalArgumentException(message);
+		return value;
+	}
 }

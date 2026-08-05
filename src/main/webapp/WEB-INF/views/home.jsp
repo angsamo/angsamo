@@ -8,7 +8,7 @@
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
-	<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/common.css?v=20260804-4">
+	<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/common.css?v=20260731-2">
 </head>
 <body>
 	<jsp:include page="/WEB-INF/views/common/sidebar.jsp" />
@@ -119,6 +119,6 @@
 			</section>
 		</main>
 	</div>
-	<script src="${pageContext.request.contextPath}/resources/js/common.js?v=20260804-5"></script>
+	<script src="${pageContext.request.contextPath}/resources/js/common.js?v=20260731"></script>
 </body>
 </html>

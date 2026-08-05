@@ -23,36 +23,18 @@ public interface MaterialMapper {
 	List<Map<String, Object>> findCloseReadyOrders();
 	Map<String, Object> findStatementPrint(long statementId);
 	Map<String, Object> lockShipment(long shipmentId);
-	Map<String, Object> lockReceiving(long receivingId);
-	Map<String, Object> lockInventory(String itemCode);
 	Map<String, Object> lockIssue(long issueId);
-	int insertReceiving(@Param("shipmentId") long shipmentId, @Param("poId") long poId,
-			@Param("result") String result, @Param("receivedQty") int receivedQty,
+	int completeReceiving(@Param("procurementId") long procurementId, @Param("result") String result,
 			@Param("acceptedQty") int acceptedQty, @Param("rejectedQty") int rejectedQty,
-			@Param("reason") String reason, @Param("userId") long userId);
-	long lastInsertId();
-	int insertReturn(@Param("receivingId") long receivingId, @Param("vendorId") String vendorId,
-			@Param("itemCode") String itemCode, @Param("qty") int qty,
-			@Param("reason") String reason, @Param("userId") long userId);
-	int upsertInventory(@Param("itemCode") String itemCode, @Param("qty") int qty, @Param("unitPrice") Object unitPrice);
-	int insertInventoryHistory(@Param("itemCode") String itemCode, @Param("qty") int qty,
-			@Param("beforeQty") int beforeQty, @Param("afterQty") int afterQty,
+			@Param("reason") String reason);
+	int insertStockMovement(@Param("departmentId") long departmentId, @Param("itemId") long itemId,
+			@Param("movementType") String movementType,
+			@Param("qty") int qty, @Param("referenceType") String referenceType,
 			@Param("referenceId") long referenceId, @Param("userId") long userId);
 	int updateIssue(@Param("issueId") long issueId, @Param("qty") int qty,
 			@Param("status") String status, @Param("userId") long userId);
-	int decreaseInventory(@Param("itemCode") String itemCode, @Param("qty") int qty,
-			@Param("unitPrice") Object unitPrice);
-	int insertIssueInventoryHistory(@Param("itemCode") String itemCode, @Param("qty") int qty,
-			@Param("beforeQty") int beforeQty, @Param("afterQty") int afterQty,
-			@Param("referenceId") long referenceId, @Param("userId") long userId);
-	int updateProductionRequest(@Param("requestId") long requestId, @Param("status") String status);
-	int updatePoProgress(long poId);
-	int completeProcurementPlan(long poId);
 	int updateReturnStatus(@Param("returnId") long returnId, @Param("status") String status);
-	int closePurchaseOrder(long poId);
-	Map<String, Object> findStatementCandidate(long receivingId);
-	int insertStatementPrep(long contractId);
-	int insertStatement(@Param("receivingId") long receivingId, @Param("prepId") long prepId,
-			@Param("vendorId") String vendorId, @Param("qty") int qty, @Param("price") Object price);
+	int issueStatement(long procurementId);
 	int notifyStatement(long statementId);
+	int closePurchaseOrder(long poId);
 }
