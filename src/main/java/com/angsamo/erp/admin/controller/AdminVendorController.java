@@ -27,7 +27,7 @@ public class AdminVendorController {
 	public String vendors(Model model) { model.addAttribute("vendors", service.getVendors()); return "admin/vendor-management"; }
 
 	@GetMapping("/admin/vendors/{vendorId}")
-	public String detail(@PathVariable String vendorId, Model model) {
+	public String detail(@PathVariable Long vendorId, Model model) {
 		VendorItem vendor = service.getVendor(vendorId);
 		if (vendor == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 		model.addAttribute("vendor", vendor);
@@ -42,7 +42,7 @@ public class AdminVendorController {
 	}
 
 	@PostMapping("/admin/vendors/{vendorId}")
-	public String update(@PathVariable String vendorId, @RequestParam String vendorName, RedirectAttributes redirect) {
+	public String update(@PathVariable Long vendorId, @RequestParam String vendorName, RedirectAttributes redirect) {
 		return run(() -> service.update(vendorId, vendorName), "\uD611\uB825\uD68C\uC0AC \uC815\uBCF4\uB97C \uC218\uC815\uD588\uC2B5\uB2C8\uB2E4.", redirect);
 	}
 

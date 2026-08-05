@@ -15,12 +15,12 @@ class AdminVendorServiceTests {
 		AdminVendorMapper mapper = mock(AdminVendorMapper.class);
 		AdminVendorService service = new AdminVendorService(mapper);
 		VendorItem vendor = new VendorItem();
-		vendor.setVendorId(" vendor-01 ");
+		vendor.setVendorCode(" vendor-01 ");
 		vendor.setVendorName(" \uD14C\uC2A4\uD2B8 \uD611\uB825\uC0AC ");
 
 		service.create(vendor);
 
-		assertEquals("VENDOR-01", vendor.getVendorId());
+		assertEquals("VENDOR-01", vendor.getVendorCode());
 		verify(mapper).insert(vendor);
 	}
 }

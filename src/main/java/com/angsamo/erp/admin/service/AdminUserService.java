@@ -56,14 +56,16 @@ public class AdminUserService {
 	}
 
 	private void validate(UserForm form, boolean creating) {
-		if (form.getDepartmentId() != null && hasText(form.getVendorId())) {
+		if (form.getDepartmentId() != null && form.getVendorId() != null) {
 			throw new IllegalArgumentException("\uBD80\uC11C\uC640 \uD611\uB825\uD68C\uC0AC\uB294 \uB458 \uC911 \uD558\uB098\uB9CC \uC120\uD0DD\uD558\uC138\uC694.");
 		}
-		if (!hasText(form.getVendorId())) form.setVendorId(null);
 		if (creating && !hasText(form.getLoginId())) throw new IllegalArgumentException("아이디를 입력하세요.");
 		if (creating && !hasText(form.getPassword())) throw new IllegalArgumentException("비밀번호를 입력하세요.");
 		if (!hasText(form.getUserName())) throw new IllegalArgumentException("이름을 입력하세요.");
-		if (!"ADMIN".equals(form.getRole()) && !"MEMBER".equals(form.getRole())) {
+		if ("VENDOR".equals(form.getRole()) && form.getVendorId() == null) {
+			throw new IllegalArgumentException("\uD611\uB825\uD68C\uC0AC \uACC4\uC815\uC740 \uD68C\uC0AC\uB97C \uC120\uD0DD\uD574\uC57C \uD569\uB2C8\uB2E4.");
+		}
+		if (!"ADMIN".equals(form.getRole()) && !"MEMBER".equals(form.getRole()) && !"VENDOR".equals(form.getRole())) {
 			throw new IllegalArgumentException("올바른 권한을 선택하세요.");
 		}
 	}

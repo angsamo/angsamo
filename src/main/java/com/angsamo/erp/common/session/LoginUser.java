@@ -9,10 +9,10 @@ public class LoginUser {
 	private String role;
 	private Long departmentId;
 	private String departmentCode;
-	private String vendorId;
+	private Long vendorId;
 
 	public LoginUser(Long userId, String loginId, String userName, String role,
-			Long departmentId, String departmentCode, String vendorId) {
+			Long departmentId, String departmentCode, Long vendorId) {
 		this.userId = userId;
 		this.loginId = loginId;
 		this.userName = userName;
@@ -28,5 +28,5 @@ public class LoginUser {
 	public String getRole() { return role; }
 	public Long getDepartmentId() { return departmentId; }
 	public String getDepartmentCode() { return departmentCode; }
-	public String getVendorId() { return vendorId; }
+	public Long getVendorId() { return vendorId; }
 }

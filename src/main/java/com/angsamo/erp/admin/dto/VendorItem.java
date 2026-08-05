@@ -8,7 +8,10 @@ import lombok.Setter;
 @Getter
 @Setter
 public class VendorItem {
-	private String vendorId;
+	private Long vendorId;
+	private String vendorCode;
 	private String vendorName;
+	private Boolean active;
 	private LocalDateTime createdAt;
+	private LocalDateTime updatedAt;
 }

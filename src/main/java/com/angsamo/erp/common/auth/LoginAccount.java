@@ -8,7 +8,7 @@ public class LoginAccount {
 	private String role;
 	private Long departmentId;
 	private String departmentCode;
-	private String vendorId;
+	private Long vendorId;
 
 	public Long getUserId() { return userId; }
 	public void setUserId(Long userId) { this.userId = userId; }
@@ -24,6 +24,6 @@ public class LoginAccount {
 	public void setDepartmentId(Long departmentId) { this.departmentId = departmentId; }
 	public String getDepartmentCode() { return departmentCode; }
 	public void setDepartmentCode(String departmentCode) { this.departmentCode = departmentCode; }
-	public String getVendorId() { return vendorId; }
-	public void setVendorId(String vendorId) { this.vendorId = vendorId; }
+	public Long getVendorId() { return vendorId; }
+	public void setVendorId(Long vendorId) { this.vendorId = vendorId; }
 }

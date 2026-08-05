@@ -10,8 +10,8 @@ import com.angsamo.erp.admin.dto.VendorItem;
 @Mapper
 public interface AdminVendorMapper {
 	List<VendorItem> findAll();
-	VendorItem findById(String vendorId);
-	int countById(String vendorId);
+	VendorItem findById(Long vendorId);
+	int countByCode(String vendorCode);
 	void insert(VendorItem vendor);
-	void update(@Param("vendorId") String vendorId, @Param("vendorName") String vendorName);
+	void update(@Param("vendorId") Long vendorId, @Param("vendorName") String vendorName);
 }

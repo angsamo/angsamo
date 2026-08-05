@@ -10,7 +10,7 @@ public class UserForm {
 	private String password;
 	private String userName;
 	private Long departmentId;
-	private String vendorId;
+	private Long vendorId;
 	private String role;
 	private Boolean active;
 }
