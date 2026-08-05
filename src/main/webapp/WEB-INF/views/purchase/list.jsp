@@ -8,7 +8,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>협력업체 목록 | 앙사모 ERP</title>
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect"
           href="https://fonts.gstatic.com"
@@ -34,8 +33,25 @@
                     <h1>협력업체 목록</h1>
                     <p>구매 업무에 등록된 협력업체 정보를 조회합니다.</p>
                 </div>
+				
+				<a class="action-button"
+					   href="${pageContext.request.contextPath}/purchase/vendors/new">
+					    협력업체 등록
+				</a>
             </section>
+			
+			<c:if test="${not empty success}">
+			    <p class="flash success">
+			        <c:out value="${success}"/>
+			    </p>
+			</c:if>
 
+			<c:if test="${not empty error}">
+			    <p class="flash error">
+			        <c:out value="${error}"/>
+			    </p>
+			</c:if>
+			
             <section class="panel table-panel">
                 <div class="panel-header">
                     <div>
@@ -60,6 +76,7 @@
                                 <th>이메일</th>
                                 <th>거래 상태</th>
                                 <th>등록일</th>
+								<th>관리</th>
                             </tr>
                         </thead>
 
@@ -98,15 +115,31 @@
                                         </span>
                                     </td>
 
-                                    <td>
-                                        <c:out value="${vendor.createdAt}" />
-                                    </td>
-                                </tr>
+									<td>
+									    <c:out value="${vendor.createdAt}" />
+									</td>
+
+									<td>
+									    <a href="${pageContext.request.contextPath}/purchase/vendors/${vendor.vendorId}/edit">
+									        수정
+									    </a>
+
+									    <c:if test="${vendor.active}">
+									        <form method="post"
+									              action="${pageContext.request.contextPath}/purchase/vendors/${vendor.vendorId}/deactivate"
+									              style="display:inline"
+									              onsubmit="return confirm('거래를 중지하시겠습니까?');">
+
+									            <button type="submit">거래 중지</button>
+									        </form>
+									    </c:if>
+									</td>
+									</tr>
                             </c:forEach>
 
                             <c:if test="${empty vendors}">
                                 <tr>
-                                    <td class="empty-cell" colspan="8">
+                                    <td class="empty-cell" colspan="9">
                                         등록된 협력업체가 없습니다.
                                     </td>
                                 </tr>

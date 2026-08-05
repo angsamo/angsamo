@@ -28,6 +28,18 @@
                     <p>자재부서에서 부족 처리한 생산 자재요청을 조회합니다.</p>
                 </div>
             </section>
+			
+			<c:if test="${not empty success}">
+			    <p class="flash success">
+			        <c:out value="${success}"/>
+			    </p>
+			</c:if>
+
+			<c:if test="${not empty error}">
+			    <p class="flash error">
+			        <c:out value="${error}"/>
+			    </p>
+			</c:if>
 
             <section class="panel table-panel">
                 <div class="panel-header">
@@ -53,6 +65,7 @@
                                 <th>필요일</th>
                                 <th>요청자</th>
                                 <th>상태</th>
+								<th>조달업무</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -78,16 +91,22 @@
                                     <td><c:out value="${shortage.requiredDate}" /></td>
                                     <td><c:out value="${shortage.requestedByName}" /></td>
                                     <td><span class="state-badge disabled"><c:out value="${shortage.status}" /></span></td>
+									<td>
+									    <a class="action-button"
+									       href="${pageContext.request.contextPath}/purchase/shortages/${shortage.requestId}/procurement">
+									        생성
+									    </a>
+									</td>
                                 </tr>
                             </c:forEach>
-
-                            <c:if test="${empty shortages}">
-                                <tr>
-                                    <td class="empty-cell" colspan="11">
-                                        부족 처리된 자재요청이 없습니다.
-                                    </td>
-                                </tr>
-                            </c:if>
+							
+							<c:if test="${empty shortages}">
+							    <tr>
+							        <td class="empty-cell" colspan="12">
+							            부족 처리된 자재요청이 없습니다.
+							        </td>
+							    </tr>
+							</c:if>
                         </tbody>
                     </table>
                 </div>
