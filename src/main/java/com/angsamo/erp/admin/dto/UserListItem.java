@@ -16,7 +16,7 @@ public class UserListItem {
 	private Long departmentId;
 	private String departmentCode;
 	private String departmentName;
-	private Long vendorId;
+	private String vendorId;
 	private String vendorName;
 	private String role;
 	private Boolean active;

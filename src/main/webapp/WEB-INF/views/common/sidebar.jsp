@@ -24,7 +24,7 @@
 				<a href="${pageContext.request.contextPath}/admin/users">전체 현황</a>
 				<a href="${pageContext.request.contextPath}/admin/users">사용자 관리</a>
 				<a href="${pageContext.request.contextPath}/admin/departments">부서 관리</a>
-				<a href="${pageContext.request.contextPath}/purchase/vendors">협력회사 관리</a>
+				<a href="${pageContext.request.contextPath}/admin/vendors">협력회사 관리</a>
 			</div>
 		</div>
 
@@ -105,9 +105,11 @@
 		</div>
 	</nav>
 
-	<a class="logout" href="#">
-		<span class="material-symbols-outlined">logout</span>
-		<span>로그아웃</span>
-	</a>
+	<form action="${pageContext.request.contextPath}/logout" method="post">
+		<button class="logout" type="submit">
+			<span class="material-symbols-outlined">logout</span>
+			<span>로그아웃</span>
+		</button>
+	</form>
 </aside>
 <div class="sidebar-backdrop" id="sidebarBackdrop"></div>

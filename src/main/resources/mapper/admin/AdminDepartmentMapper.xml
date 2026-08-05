@@ -14,4 +14,25 @@
 		FROM department
 		ORDER BY department_id
 	</select>
+	<select id="findById" resultType="com.angsamo.erp.admin.dto.DepartmentListItem">
+		SELECT department_id, department_code, department_name, active, created_at, updated_at
+		FROM department WHERE department_id = #{departmentId}
+	</select>
+	<select id="countByCode" resultType="int">
+		SELECT COUNT(*) FROM department
+		WHERE department_code = #{code}
+		<if test="excludeId != null">AND department_id != #{excludeId}</if>
+	</select>
+	<insert id="insert">
+		INSERT INTO department (department_code, department_name, active)
+		VALUES (#{departmentCode}, #{departmentName}, 1)
+	</insert>
+	<update id="update">
+		UPDATE department
+		SET department_code = #{form.departmentCode}, department_name = #{form.departmentName}, active = #{form.active}
+		WHERE department_id = #{departmentId}
+	</update>
+	<update id="deactivate">
+		UPDATE department SET active = 0 WHERE department_id = #{departmentId}
+	</update>
 </mapper>

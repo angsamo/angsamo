@@ -21,4 +21,32 @@
 		LEFT JOIN vendor v ON v.vendor_id = u.vendor_id
 		ORDER BY u.user_id
 	</select>
+	<select id="findById" resultType="com.angsamo.erp.admin.dto.UserListItem">
+		SELECT u.user_id, u.login_id, u.user_name, u.department_id,
+			d.department_code, d.department_name, u.vendor_id, v.vendor_name,
+			u.role, u.active, u.created_at
+		FROM app_user u
+		LEFT JOIN department d ON d.department_id = u.department_id
+		LEFT JOIN vendor v ON v.vendor_id = u.vendor_id
+		WHERE u.user_id = #{userId}
+	</select>
+	<select id="countByLoginId" resultType="int">
+		SELECT COUNT(*) FROM app_user WHERE login_id = #{loginId}
+	</select>
+	<insert id="insert">
+		INSERT INTO app_user (login_id, password, user_name, department_id, vendor_id, role, active)
+		VALUES (#{loginId}, #{password}, #{userName}, #{departmentId}, #{vendorId}, #{role}, 1)
+	</insert>
+	<update id="update">
+		UPDATE app_user
+		SET user_name = #{form.userName}, department_id = #{form.departmentId}, vendor_id = #{form.vendorId},
+			role = #{form.role}, active = #{form.active}
+		<if test="encodedPassword != null and encodedPassword != ''">
+			, password = #{encodedPassword}
+		</if>
+		WHERE user_id = #{userId}
+	</update>
+	<update id="deactivate">
+		UPDATE app_user SET active = 0 WHERE user_id = #{userId}
+	</update>
 </mapper>
