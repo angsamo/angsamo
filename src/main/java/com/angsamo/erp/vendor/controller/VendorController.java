@@ -38,8 +38,9 @@ public class VendorController {
     @GetMapping("/quotes")
     public String quotes(@RequestParam(required = false) String status,
             HttpSession session, Model model) {
-        model.addAttribute("quotes", vendorService.quotes(readScope(session), status));
-        model.addAttribute("status", status);
+        String quoteStatus = status == null || status.isBlank() ? "REQUESTED" : status;
+        model.addAttribute("quotes", vendorService.quotes(readScope(session), quoteStatus));
+        model.addAttribute("status", quoteStatus);
         model.addAttribute("canProcess", canProcess(session));
         return "vendor/quotes";
     }
