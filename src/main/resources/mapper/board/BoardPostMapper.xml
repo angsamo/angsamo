@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.angsamo.erp.board.mapper.BoardPostMapper">
+	<sql id="selectColumns">
+		SELECT
+			p.post_id,
+			p.board_id,
+			b.board_name,
+			p.title,
+			p.content,
+			p.author_id,
+			u.user_name AS author_name,
+			p.view_count,
+			p.active,
+			p.created_at
+		FROM board_post p
+		JOIN board b ON b.board_id = p.board_id
+		LEFT JOIN app_user u ON u.user_id = p.author_id
+	</sql>
+	<select id="findAll" resultType="com.angsamo.erp.board.dto.BoardPostListItem">
+		<include refid="selectColumns"/>
+		ORDER BY p.post_id DESC
+	</select>
+	<select id="findPage" resultType="com.angsamo.erp.board.dto.BoardPostListItem">
+		<include refid="selectColumns"/>
+		<where>
+			<if test="active != null">AND p.active = #{active}</if>
+		</where>
+		ORDER BY p.post_id DESC
+		LIMIT #{size} OFFSET #{offset}
+	</select>
+	<select id="count" resultType="long">
+		SELECT COUNT(*) FROM board_post p
+		<where>
+			<if test="active != null">AND p.active = #{active}</if>
+		</where>
+	</select>
+	<select id="findByBoardId" resultType="com.angsamo.erp.board.dto.BoardPostListItem">
+		<include refid="selectColumns"/>
+		WHERE p.board_id = #{boardId}
+		ORDER BY p.post_id DESC
+	</select>
+	<select id="findById" resultType="com.angsamo.erp.board.dto.BoardPostListItem">
+		<include refid="selectColumns"/>
+		WHERE p.post_id = #{postId}
+	</select>
+	<insert id="insert">
+		INSERT INTO board_post (board_id, title, content, author_id, view_count, active)
+		VALUES (#{form.boardId}, #{form.title}, #{form.content}, #{authorId}, 0, 1)
+	</insert>
+	<update id="update">
+		UPDATE board_post
+		SET title = #{form.title}, content = #{form.content}
+		WHERE post_id = #{postId}
+	</update>
+	<update id="deactivate">
+		UPDATE board_post SET active = 0 WHERE post_id = #{postId}
+	</update>
+	<update id="incrementViewCount">
+		UPDATE board_post SET view_count = view_count + 1 WHERE post_id = #{postId}
+	</update>
+</mapper>

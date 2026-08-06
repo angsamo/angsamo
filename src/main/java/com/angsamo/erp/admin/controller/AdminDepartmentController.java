@@ -6,6 +6,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -24,8 +25,19 @@ public class AdminDepartmentController {
 	}
 
 	@GetMapping("/admin/departments")
-	public String departments(Model model) {
-		model.addAttribute("departments", adminDepartmentService.getDepartments());
+	public String departments(@RequestParam(required = false) String status, Model model) {
+		var all = adminDepartmentService.getDepartments();
+		long activeCount = all.stream().filter(d -> Boolean.TRUE.equals(d.getActive())).count();
+		long inactiveCount = all.size() - activeCount;
+		var filtered = all.stream()
+				.filter(d -> "active".equals(status) ? Boolean.TRUE.equals(d.getActive())
+						: "suspended".equals(status) ? !Boolean.TRUE.equals(d.getActive()) : true)
+				.toList();
+		model.addAttribute("departments", filtered);
+		model.addAttribute("grandTotal", all.size());
+		model.addAttribute("activeCount", activeCount);
+		model.addAttribute("inactiveCount", inactiveCount);
+		model.addAttribute("status", status);
 		return "admin/department-management";
 	}
 

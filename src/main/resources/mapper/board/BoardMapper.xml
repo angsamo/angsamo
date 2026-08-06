@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.angsamo.erp.board.mapper.BoardMapper">
+	<select id="findAll" resultType="com.angsamo.erp.board.dto.BoardListItem">
+		SELECT
+			b.board_id,
+			b.board_code,
+			b.board_name,
+			b.department_id,
+			d.department_name,
+			b.active,
+			b.created_at
+		FROM board b
+		LEFT JOIN department d ON d.department_id = b.department_id
+		ORDER BY b.board_id
+	</select>
+	<select id="findById" resultType="com.angsamo.erp.board.dto.BoardListItem">
+		SELECT
+			b.board_id,
+			b.board_code,
+			b.board_name,
+			b.department_id,
+			d.department_name,
+			b.active,
+			b.created_at
+		FROM board b
+		LEFT JOIN department d ON d.department_id = b.department_id
+		WHERE b.board_id = #{boardId}
+	</select>
+	<select id="findVisible" resultType="com.angsamo.erp.board.dto.BoardListItem">
+		SELECT
+			b.board_id,
+			b.board_code,
+			b.board_name,
+			b.department_id,
+			d.department_name,
+			b.active,
+			b.created_at
+		FROM board b
+		LEFT JOIN department d ON d.department_id = b.department_id
+		WHERE b.active = 1
+		AND (b.department_id IS NULL
+		<if test="departmentId != null">OR b.department_id = #{departmentId}</if>
+		)
+		ORDER BY b.board_id
+	</select>
+	<select id="countByCode" resultType="int">
+		SELECT COUNT(*) FROM board
+		WHERE board_code = #{code}
+		<if test="excludeId != null">AND board_id != #{excludeId}</if>
+	</select>
+	<insert id="insert">
+		INSERT INTO board (board_code, board_name, department_id, active)
+		VALUES (#{boardCode}, #{boardName}, #{departmentId}, 1)
+	</insert>
+	<update id="update">
+		UPDATE board
+		SET board_name = #{form.boardName}, active = #{form.active}
+		WHERE board_id = #{boardId}
+	</update>
+	<update id="deactivate">
+		UPDATE board SET active = 0 WHERE board_id = #{boardId}
+	</update>
+</mapper>

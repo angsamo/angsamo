@@ -6,6 +6,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -31,8 +32,20 @@ public class AdminUserController {
 	}
 
 	@GetMapping("/admin/users")
-	public String users(Model model) {
-		model.addAttribute("users", adminUserService.getUsers());
+	public String users(@RequestParam(required = false) Integer page,
+			@RequestParam(required = false) String status, Model model) {
+		var result = adminUserService.getUsers(page, status);
+		model.addAttribute("users", result.getItems());
+		model.addAttribute("page", result.getPage());
+		model.addAttribute("totalPages", result.getTotalPages());
+		model.addAttribute("totalCount", result.getTotalCount());
+		long activeCount = adminUserService.countActive();
+		long inactiveCount = adminUserService.countInactive();
+		model.addAttribute("activeCount", activeCount);
+		model.addAttribute("inactiveCount", inactiveCount);
+		model.addAttribute("grandTotal", activeCount + inactiveCount);
+		model.addAttribute("status", status);
+		model.addAttribute("baseUrl", "/admin/users" + (status != null ? "?status=" + status : ""));
 		model.addAttribute("departments", adminDepartmentService.getDepartments());
 		model.addAttribute("vendors", adminVendorService.getVendors());
 		return "admin/user-management";

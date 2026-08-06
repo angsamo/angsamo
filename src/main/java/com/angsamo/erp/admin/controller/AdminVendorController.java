@@ -24,7 +24,21 @@ public class AdminVendorController {
 	}
 
 	@GetMapping("/admin/vendors")
-	public String vendors(Model model) { model.addAttribute("vendors", service.getVendors()); return "admin/vendor-management"; }
+	public String vendors(@RequestParam(required = false) Integer page, @RequestParam(required = false) String status,
+			Model model) {
+		var result = service.getVendors(page, status);
+		long activeCount = service.countActive();
+		long inactiveCount = service.countInactive();
+		model.addAttribute("vendors", result.getItems());
+		model.addAttribute("page", result.getPage());
+		model.addAttribute("totalPages", result.getTotalPages());
+		model.addAttribute("activeCount", activeCount);
+		model.addAttribute("inactiveCount", inactiveCount);
+		model.addAttribute("grandTotal", activeCount + inactiveCount);
+		model.addAttribute("status", status);
+		model.addAttribute("baseUrl", "/admin/vendors" + (status != null ? "?status=" + status : ""));
+		return "admin/vendor-management";
+	}
 
 	@GetMapping("/admin/vendors/{vendorId}")
 	public String detail(@PathVariable Long vendorId, Model model) {

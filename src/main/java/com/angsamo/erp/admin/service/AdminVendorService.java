@@ -7,15 +7,34 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.angsamo.erp.admin.dto.VendorItem;
 import com.angsamo.erp.admin.mapper.AdminVendorMapper;
+import com.angsamo.erp.common.paging.PageRequest;
+import com.angsamo.erp.common.paging.PageResult;
 
 @Service
 public class AdminVendorService {
+	public static final int PAGE_SIZE = 20;
+
 	private final AdminVendorMapper mapper;
 
 	public AdminVendorService(AdminVendorMapper mapper) { this.mapper = mapper; }
 
 	@Transactional(readOnly = true)
 	public List<VendorItem> getVendors() { return mapper.findAll(); }
+
+	@Transactional(readOnly = true)
+	public PageResult<VendorItem> getVendors(Integer page, String status) {
+		Boolean active = "active".equals(status) ? Boolean.TRUE : "suspended".equals(status) ? Boolean.FALSE : null;
+		PageRequest pageRequest = new PageRequest(page, PAGE_SIZE);
+		List<VendorItem> items = mapper.findPage(pageRequest.getOffset(), pageRequest.getSize(), active);
+		long totalCount = mapper.count(active);
+		return new PageResult<>(items, pageRequest.getPage(), pageRequest.getSize(), totalCount);
+	}
+
+	@Transactional(readOnly = true)
+	public long countActive() { return mapper.count(true); }
+
+	@Transactional(readOnly = true)
+	public long countInactive() { return mapper.count(false); }
 
 	@Transactional(readOnly = true)
 	public VendorItem getVendor(Long vendorId) { return mapper.findById(vendorId); }

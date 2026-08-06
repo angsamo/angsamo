@@ -29,7 +29,7 @@
 	</insert>
 	<update id="update">
 		UPDATE department
-		SET department_code = #{form.departmentCode}, department_name = #{form.departmentName}, active = #{form.active}
+		SET department_name = #{form.departmentName}, active = #{form.active}
 		WHERE department_id = #{departmentId}
 	</update>
 	<update id="deactivate">

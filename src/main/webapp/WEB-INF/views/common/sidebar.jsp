@@ -1,4 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <aside class="sidebar" id="sidebar">
 	<div class="brand">
 		<span class="brand-mark material-symbols-outlined">domain</span>
@@ -14,6 +15,12 @@
 			<span>대시보드</span>
 		</a>
 
+		<a class="nav-link" href="${pageContext.request.contextPath}/boards">
+			<span class="material-symbols-outlined">forum</span>
+			<span>게시판</span>
+		</a>
+
+		<c:if test="${sessionScope.loginUser.role == 'ADMIN'}">
 		<div class="nav-group">
 			<a class="nav-link" href="#">
 				<span class="material-symbols-outlined">admin_panel_settings</span>
@@ -25,9 +32,13 @@
 				<a href="${pageContext.request.contextPath}/admin/users">사용자 관리</a>
 				<a href="${pageContext.request.contextPath}/admin/departments">부서 관리</a>
 				<a href="${pageContext.request.contextPath}/admin/vendors">협력회사 관리</a>
+				<a href="${pageContext.request.contextPath}/admin/boards">게시판 관리</a>
+				<a href="${pageContext.request.contextPath}/admin/posts">게시글 관리</a>
 			</div>
 		</div>
+		</c:if>
 
+		<c:if test="${sessionScope.loginUser.role == 'ADMIN' or sessionScope.loginUser.departmentCode == 'DEV'}">
 		<div class="nav-group">
 			<a class="nav-link" href="#">
 				<span class="material-symbols-outlined">category</span>
@@ -40,7 +51,9 @@
 				<a href="${pageContext.request.contextPath}/development/boms">BOM 관리</a>
 			</div>
 		</div>
+		</c:if>
 
+		<c:if test="${sessionScope.loginUser.role == 'ADMIN' or sessionScope.loginUser.departmentCode == 'PRODUCTION'}">
 		<div class="nav-group">
 			<a class="nav-link" href="#">
 				<span class="material-symbols-outlined">factory</span>
@@ -48,14 +61,16 @@
 				<span class="nav-arrow material-symbols-outlined">chevron_right</span>
 			</a>
 			<div class="submenu">
-				<a href="${pageContext.request.contextPath}/production/plans">생산 현황</a>
+				<a href="#">생산 현황</a>
 				<a href="${pageContext.request.contextPath}/production/plans">생산계획</a>
-				<a href="${pageContext.request.contextPath}/production/material-requests">자재 소요량</a>
+				<a href="${pageContext.request.contextPath}/production/material-requirements">자재 소요량</a>
 				<a href="${pageContext.request.contextPath}/production/material-requests">불출 요청</a>
 				<a href="${pageContext.request.contextPath}/material/inventory">재고 조회</a>
 			</div>
 		</div>
+		</c:if>
 
+		<c:if test="${sessionScope.loginUser.role == 'ADMIN' or sessionScope.loginUser.departmentCode == 'PURCHASE'}">
 		<div class="nav-group">
 			<a class="nav-link" href="${pageContext.request.contextPath}/purchase/procurements">
 				<span class="material-symbols-outlined">shopping_cart</span>
@@ -71,7 +86,9 @@
 				<a href="${pageContext.request.contextPath}/purchase/shortages">연계 조회</a>
 			</div>
 		</div>
+		</c:if>
 
+		<c:if test="${sessionScope.loginUser.role == 'ADMIN' or sessionScope.loginUser.departmentCode == 'MATERIAL'}">
 		<div class="nav-group">
 			<a class="nav-link" href="#">
 				<span class="material-symbols-outlined">inventory_2</span>
@@ -87,7 +104,9 @@
 				<a href="${pageContext.request.contextPath}/material/statements">거래명세서</a>
 			</div>
 		</div>
+		</c:if>
 
+		<c:if test="${sessionScope.loginUser.role == 'ADMIN' or sessionScope.loginUser.role == 'VENDOR'}">
 		<div class="nav-group">
 			<a class="nav-link" href="#">
 				<span class="material-symbols-outlined">handshake</span>
@@ -95,14 +114,15 @@
 				<span class="nav-arrow material-symbols-outlined">chevron_right</span>
 			</a>
 			<div class="submenu">
-				<a href="#">협력 현황</a>
-				<a href="#">견적 관리</a>
-				<a href="#">발주 관리</a>
-				<a href="#">제작·출하</a>
-				<a href="#">보완·반품</a>
-				<a href="#">거래명세서</a>
+				<a href="${pageContext.request.contextPath}/vendor">협력 현황</a>
+				<a href="${pageContext.request.contextPath}/vendor/quotes">견적 관리</a>
+				<a href="${pageContext.request.contextPath}/vendor/orders">발주 관리</a>
+				<a href="${pageContext.request.contextPath}/vendor/shipments">제작·출하</a>
+				<a href="${pageContext.request.contextPath}/vendor/returns">보완·반품</a>
+				<a href="${pageContext.request.contextPath}/vendor/statements">거래명세서</a>
 			</div>
 		</div>
+		</c:if>
 	</nav>
 
 	<form action="${pageContext.request.contextPath}/logout" method="post">
