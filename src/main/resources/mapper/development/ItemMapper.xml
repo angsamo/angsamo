@@ -25,6 +25,34 @@ WHERE active = 1
 ORDER BY item_id DESC
     </select>
 
+    <select id="search"
+            resultType="com.angsamo.erp.development.domain.Item">
+        SELECT
+            item_id,
+            item_code,
+            item_name,
+            item_type,
+            spec,
+            unit,
+            standard_price,
+            description,
+            active,
+            created_at,
+            updated_at
+        FROM item
+        WHERE active = 1
+        <if test="keyword != null and keyword != ''">
+            AND (
+                item_code LIKE CONCAT('%', #{keyword}, '%')
+                OR item_name LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+        <if test="itemType != null and itemType != ''">
+            AND item_type = #{itemType}
+        </if>
+        ORDER BY item_id DESC
+    </select>
+
     <select id="findByItemId"
             parameterType="long"
             resultType="com.angsamo.erp.development.domain.Item">

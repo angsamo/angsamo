@@ -66,9 +66,9 @@
 								<label><input type="checkbox" name="qualityChecked" value="true" required> 외관·규격·품질 상태를 검수했습니다.</label>
 							</fieldset>
 							<div class="inspection-inputs">
-								<label>정상 수량<input type="number" name="acceptedQty" min="0" max="${row.shipmentQty}" value="${row.shipmentQty}" required></label>
-								<label>불량/반품 수량<input type="number" name="rejectedQty" min="0" max="${row.shipmentQty}" value="0" required></label>
-								<label class="reason-field">불량 사유<input type="text" name="reason" maxlength="500" placeholder="불량 수량이 있으면 반드시 입력"></label>
+								<label>입고 검사 수량<input type="number" name="receivedQty" min="1" max="${row.shipmentQty}" value="${row.shipmentQty}" required></label>
+								<label>검사 결과<select name="inspectionResult" required><option value="ACCEPTED">정상 입고</option><option value="RETURNED">전체 반품</option></select></label>
+								<label class="reason-field">반품 사유<input type="text" name="reason" maxlength="500" placeholder="반품 선택 시 반드시 입력"></label>
 								<button class="action-button" type="submit">검수 완료 및 입고 마감</button>
 							</div>
 							<p class="hint">정상 수량 + 불량 수량은 출하 수량 ${row.shipmentQty}와 정확히 같아야 합니다.</p>

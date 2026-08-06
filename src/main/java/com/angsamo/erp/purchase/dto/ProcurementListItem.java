@@ -15,6 +15,7 @@ public class ProcurementListItem {
 
     private Long procurementId;
     private Long materialRequestId;
+    private Long productionPlanId;
     private Long departmentId;
     private String departmentName;
     private Long itemId;

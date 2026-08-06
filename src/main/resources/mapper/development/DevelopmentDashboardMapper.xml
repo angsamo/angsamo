@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.angsamo.erp.development.mapper.DevelopmentDashboardMapper">
+
+    <select id="findSummary"
+            resultType="com.angsamo.erp.development.domain.DevelopmentDashboardSummary">
+        SELECT
+            COUNT(*) AS total_item_count,
+            SUM(CASE WHEN item_type = 'PRODUCT' THEN 1 ELSE 0 END) AS product_count,
+            SUM(CASE WHEN item_type = 'MATERIAL' THEN 1 ELSE 0 END) AS material_count,
+            (SELECT COUNT(*) FROM bom) AS bom_count,
+            SUM(CASE
+                    WHEN item_type = 'PRODUCT'
+                     AND NOT EXISTS (
+                         SELECT 1 FROM bom b WHERE b.parent_item_id = i.item_id
+                     )
+                    THEN 1 ELSE 0
+                END) AS product_without_bom_count
+        FROM item i
+        WHERE active = 1
+    </select>
+
+    <select id="findRecentItems"
+            resultType="com.angsamo.erp.development.domain.Item">
+        SELECT
+            item_id, item_code, item_name, item_type, spec, unit,
+            standard_price, description, active, created_at, updated_at
+        FROM item
+        WHERE active = 1
+        ORDER BY created_at DESC, item_id DESC
+        LIMIT 5
+    </select>
+
+    <select id="findRecentBoms"
+            resultType="com.angsamo.erp.development.domain.Bom">
+        SELECT
+            b.bom_id,
+            b.parent_item_id,
+            b.component_item_id,
+            b.required_qty,
+            b.created_at,
+            b.updated_at,
+            parent_item.item_code AS parent_item_code,
+            parent_item.item_name AS parent_item_name,
+            component_item.item_code AS component_item_code,
+            component_item.item_name AS component_item_name,
+            component_item.unit AS component_unit
+        FROM bom b
+        JOIN item parent_item ON parent_item.item_id = b.parent_item_id
+        JOIN item component_item ON component_item.item_id = b.component_item_id
+        ORDER BY b.created_at DESC, b.bom_id DESC
+        LIMIT 5
+    </select>
+
+</mapper>

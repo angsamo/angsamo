@@ -29,6 +29,13 @@
                 </div>
             </section>
 
+            <c:if test="${not empty success}">
+                <p class="flash success"><c:out value="${success}" /></p>
+            </c:if>
+            <c:if test="${not empty error}">
+                <p class="flash error"><c:out value="${error}" /></p>
+            </c:if>
+
             <section class="panel table-panel">
                 <div class="panel-header">
                     <div>
@@ -55,6 +62,7 @@
                                 <th>거래조건</th>
                                 <th>제출일시</th>
                                 <th>등록일</th>
+                                <th>업체 선정</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -84,12 +92,27 @@
                                     <td><c:out value="${quote.terms}" default="-" /></td>
                                     <td><c:out value="${quote.submittedAt}" default="미제출" /></td>
                                     <td><c:out value="${quote.createdAt}" /></td>
+                                    <td>
+                                        <c:choose>
+                                            <c:when test="${quote.status == 'SUBMITTED' and quote.procurementStatus == 'QUOTING'}">
+                                                <form method="post"
+                                                      action="${pageContext.request.contextPath}/purchase/procurements/${quote.procurementId}/quotes/${quote.quoteId}/select"
+                                                      onsubmit="return confirm('이 협력업체의 견적을 선정하시겠습니까?');">
+                                                    <button class="action-button" type="submit">선정</button>
+                                                </form>
+                                            </c:when>
+                                            <c:when test="${quote.status == 'SELECTED'}">
+                                                <span class="state-badge enabled">선정 완료</span>
+                                            </c:when>
+                                            <c:otherwise>-</c:otherwise>
+                                        </c:choose>
+                                    </td>
                                 </tr>
                             </c:forEach>
 
                             <c:if test="${empty quotes}">
                                 <tr>
-                                    <td class="empty-cell" colspan="13">
+                                    <td class="empty-cell" colspan="14">
                                         등록된 업체 견적이 없습니다.
                                     </td>
                                 </tr>

@@ -29,6 +29,13 @@ public class BomService {
         return bomMapper.findAll();
     }
 
+    public List<Bom> search(String keyword) {
+        String normalizedKeyword = keyword == null || keyword.isBlank()
+                ? null
+                : keyword.trim();
+        return bomMapper.search(normalizedKeyword);
+    }
+
     // BOM 상세 조회
     public Bom findByBomId(Long bomId) {
         return bomMapper.findByBomId(bomId);

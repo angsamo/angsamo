@@ -50,6 +50,7 @@
         SELECT q.quote_id AS quoteId,
                q.procurement_id AS procurementId,
                q.vendor_id AS vendorId,
+               p.selected_vendor_id AS selectedVendorId,
                v.vendor_name AS vendorName,
                i.item_code AS itemCode,
                i.item_name AS itemName,

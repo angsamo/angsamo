@@ -1,5 +1,6 @@
 package com.angsamo.erp.purchase.service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -8,6 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.angsamo.erp.purchase.dto.ProcurementCreateForm;
 import com.angsamo.erp.purchase.dto.ProcurementDetail;
+import com.angsamo.erp.purchase.dto.PurchaseProgressItem;
+import com.angsamo.erp.purchase.dto.PurchaseReceivingItem;
 import com.angsamo.erp.purchase.dto.ProcurementListItem;
 import com.angsamo.erp.purchase.dto.QuoteRequestForm;
 import com.angsamo.erp.purchase.dto.ShortageMaterialRequestItem;
@@ -274,4 +277,107 @@ public class PurchaseService {
     public List<VendorQuoteListItem> getVendorQuotes() {
         return purchaseMapper.findVendorQuotes();
     }
+
+    @Transactional
+    public void selectQuote(
+            Long procurementId,
+            Long quoteId,
+            Long departmentId,
+            boolean admin) {
+
+        if (procurementId == null || quoteId == null) {
+            throw new IllegalArgumentException("선정할 견적을 확인하세요.");
+        }
+
+        int updated = purchaseMapper.selectProcurementQuote(
+                procurementId, quoteId, departmentId, admin);
+
+        if (updated != 1) {
+            throw new IllegalStateException(
+                    "제출 완료된 견적만 선정할 수 있거나 조달업무 수정 권한이 없습니다.");
+        }
+
+        if (purchaseMapper.markQuoteSelected(procurementId, quoteId) != 1) {
+            throw new IllegalStateException("견적 선정 상태를 변경하지 못했습니다.");
+        }
+
+        purchaseMapper.rejectOtherQuotes(procurementId, quoteId);
+    }
+
+    @Transactional
+    public void confirmContract(
+            Long procurementId,
+            String terms,
+            Long departmentId,
+            boolean admin) {
+
+        if (terms == null || terms.isBlank()) {
+            throw new IllegalArgumentException("확정할 계약조건을 입력하세요.");
+        }
+
+        String normalizedTerms = terms.trim();
+        if (normalizedTerms.length() > 1000) {
+            throw new IllegalArgumentException("계약조건은 1000자 이내로 입력하세요.");
+        }
+
+        int updated = purchaseMapper.confirmContract(
+                procurementId, normalizedTerms, departmentId, admin);
+
+        if (updated != 1) {
+            throw new IllegalStateException(
+                    "업체가 선정된 담당 부서의 조달업무만 계약 확정할 수 있습니다.");
+        }
+    }
+
+    @Transactional
+    public void issuePurchaseOrder(
+            Long procurementId,
+            BigDecimal orderQty,
+            LocalDate requiredDate,
+            Long departmentId,
+            boolean admin) {
+
+        if (orderQty == null || orderQty.signum() <= 0) {
+            throw new IllegalArgumentException("발주 수량은 0보다 커야 합니다.");
+        }
+        if (requiredDate == null) {
+            throw new IllegalArgumentException("요구 납기일을 입력하세요.");
+        }
+
+        int updated = purchaseMapper.issuePurchaseOrder(
+                procurementId,
+                orderQty,
+                requiredDate,
+                departmentId,
+                admin);
+
+        if (updated != 1) {
+            throw new IllegalStateException(
+                    "계약 확정된 담당 부서의 조달업무만 발주할 수 있습니다.");
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<PurchaseProgressItem> getPurchaseProgress() {
+        return purchaseMapper.findPurchaseProgress();
+    }
+
+    @Transactional(readOnly = true)
+    public List<PurchaseReceivingItem> getPurchaseReceivings() {
+        return purchaseMapper.findPurchaseReceivings();
+    }
+
+    @Transactional
+    public void closeReceivedOrder(
+            Long procurementId,
+            Long departmentId,
+            boolean admin) {
+
+        if (purchaseMapper.closeReceivedOrder(
+                procurementId, departmentId, admin) != 1) {
+            throw new IllegalStateException(
+                    "정상 검수된 전량 입고 발주만 마감할 수 있습니다.");
+        }
+    }
+
 }
