@@ -72,17 +72,19 @@
 
 		<c:if test="${sessionScope.loginUser.role == 'ADMIN' or sessionScope.loginUser.departmentCode == 'PURCHASE'}">
 		<div class="nav-group">
-			<a class="nav-link" href="${pageContext.request.contextPath}/purchase/procurements">
+			<a class="nav-link" href="${pageContext.request.contextPath}/purchase">
 				<span class="material-symbols-outlined">shopping_cart</span>
 				<span>구매부서</span>
 				<span class="nav-arrow material-symbols-outlined">chevron_right</span>
 			</a>
 			<div class="submenu">
-				<a href="${pageContext.request.contextPath}/purchase/procurements">구매 현황</a>
+				<a href="${pageContext.request.contextPath}/purchase">구매 현황</a>
 				<a href="${pageContext.request.contextPath}/purchase/procurements">조달계획</a>
 				<a href="${pageContext.request.contextPath}/purchase/quotes">견적 관리</a>
-				<a href="${pageContext.request.contextPath}/purchase/procurements">구매 발주</a>
-				<a href="${pageContext.request.contextPath}/purchase/procurements">진척 관리</a>
+				<a href="${pageContext.request.contextPath}/purchase/contracts">계약 관리</a>
+				<a href="${pageContext.request.contextPath}/purchase/orders">구매 발주</a>
+				<a href="${pageContext.request.contextPath}/purchase/progress">진척 관리</a>
+				<a href="${pageContext.request.contextPath}/purchase/receivings">입고 연계</a>
 				<a href="${pageContext.request.contextPath}/purchase/shortages">연계 조회</a>
 			</div>
 		</div>
@@ -116,6 +118,7 @@
 			<div class="submenu">
 				<a href="${pageContext.request.contextPath}/vendor">협력 현황</a>
 				<a href="${pageContext.request.contextPath}/vendor/quotes">견적 관리</a>
+				<a href="${pageContext.request.contextPath}/vendor/contracts">계약 관리</a>
 				<a href="${pageContext.request.contextPath}/vendor/orders">발주 관리</a>
 				<a href="${pageContext.request.contextPath}/vendor/shipments">제작·출하</a>
 				<a href="${pageContext.request.contextPath}/vendor/returns">보완·반품</a>

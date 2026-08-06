@@ -1,5 +1,6 @@
 package com.angsamo.erp.purchase.controller;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
@@ -30,6 +31,28 @@ public class PurchaseController {
 
     public PurchaseController(PurchaseService purchaseService) {
         this.purchaseService = purchaseService;
+    }
+
+    @GetMapping("/purchase")
+    public String purchaseDashboard(Model model, HttpSession session) {
+        requirePurchase(session);
+        model.addAttribute("procurements", purchaseService.getProcurements());
+        model.addAttribute("quotes", purchaseService.getVendorQuotes());
+        return "purchase/dashboard";
+    }
+
+    @GetMapping("/purchase/contracts")
+    public String purchaseContracts(Model model, HttpSession session) {
+        requirePurchase(session);
+        model.addAttribute("procurements", purchaseService.getProcurements());
+        return "purchase/contracts";
+    }
+
+    @GetMapping("/purchase/orders")
+    public String purchaseOrders(Model model, HttpSession session) {
+        requirePurchase(session);
+        model.addAttribute("procurements", purchaseService.getProcurements());
+        return "purchase/orders";
     }
 
     @GetMapping("/purchase/vendors")
@@ -387,6 +410,113 @@ public class PurchaseController {
         requirePurchase(session);
         model.addAttribute("quotes", purchaseService.getVendorQuotes());
         return "purchase/quotes";
+    }
+
+    @GetMapping("/purchase/progress")
+    public String purchaseProgress(Model model, HttpSession session) {
+        requirePurchase(session);
+        model.addAttribute("progressList", purchaseService.getPurchaseProgress());
+        return "purchase/progress";
+    }
+
+    @GetMapping("/purchase/receivings")
+    public String purchaseReceivings(Model model, HttpSession session) {
+        requirePurchase(session);
+        model.addAttribute(
+                "receivings",
+                purchaseService.getPurchaseReceivings());
+        return "purchase/receivings";
+    }
+
+    @PostMapping("/purchase/procurements/{procurementId}/close")
+    public String closeReceivedOrder(
+            @PathVariable Long procurementId,
+            RedirectAttributes redirect,
+            HttpSession session) {
+
+        LoginUser user = requirePurchase(session);
+        try {
+            purchaseService.closeReceivedOrder(
+                    procurementId, user.getDepartmentId(), isAdmin(user));
+            redirect.addFlashAttribute(
+                    "success", "발주 PO-" + procurementId + "를 마감했습니다.");
+        } catch (RuntimeException e) {
+            redirect.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/purchase/receivings";
+    }
+
+    @PostMapping("/purchase/procurements/{procurementId}/quotes/{quoteId}/select")
+    public String selectQuote(
+            @PathVariable Long procurementId,
+            @PathVariable Long quoteId,
+            RedirectAttributes redirect,
+            HttpSession session) {
+
+        LoginUser user = requirePurchase(session);
+
+        try {
+            purchaseService.selectQuote(
+                    procurementId,
+                    quoteId,
+                    user.getDepartmentId(),
+                    isAdmin(user));
+            redirect.addFlashAttribute("success", "협력업체를 선정했습니다.");
+        } catch (RuntimeException e) {
+            redirect.addFlashAttribute("error", e.getMessage());
+        }
+
+        return "redirect:/purchase/quotes";
+    }
+
+    @PostMapping("/purchase/procurements/{procurementId}/contract")
+    public String confirmContract(
+            @PathVariable Long procurementId,
+            @RequestParam String terms,
+            RedirectAttributes redirect,
+            HttpSession session) {
+
+        LoginUser user = requirePurchase(session);
+
+        try {
+            purchaseService.confirmContract(
+                    procurementId,
+                    terms,
+                    user.getDepartmentId(),
+                    isAdmin(user));
+            redirect.addFlashAttribute(
+                    "success", "계약 CT-" + procurementId + "이 확정됐습니다.");
+        } catch (RuntimeException e) {
+            redirect.addFlashAttribute("error", e.getMessage());
+        }
+
+        return "redirect:/purchase/procurements/" + procurementId;
+    }
+
+    @PostMapping("/purchase/procurements/{procurementId}/order")
+    public String issuePurchaseOrder(
+            @PathVariable Long procurementId,
+            @RequestParam BigDecimal orderQty,
+            @RequestParam LocalDate requiredDate,
+            RedirectAttributes redirect,
+            HttpSession session) {
+
+        LoginUser user = requirePurchase(session);
+
+        try {
+            purchaseService.issuePurchaseOrder(
+                    procurementId,
+                    orderQty,
+                    requiredDate,
+                    user.getDepartmentId(),
+                    isAdmin(user));
+            redirect.addFlashAttribute(
+                    "success", "발주 PO-" + procurementId + "를 협력회사에 전달했습니다.");
+        } catch (RuntimeException e) {
+            redirect.addFlashAttribute("error", e.getMessage());
+        }
+
+        return "redirect:/purchase/procurements/" + procurementId;
     }
 
     private LoginUser requirePurchase(HttpSession session) {

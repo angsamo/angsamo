@@ -15,6 +15,8 @@ public class VendorQuoteListItem {
 
     private Long quoteId;
     private Long procurementId;
+    private String procurementStatus;
+    private Long selectedVendorId;
     private Long itemId;
     private String itemCode;
     private String itemName;

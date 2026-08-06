@@ -45,6 +45,14 @@ public class VendorController {
         return "vendor/quotes";
     }
 
+    @GetMapping("/contracts")
+    public String contracts(HttpSession session, Model model) {
+        model.addAttribute(
+                "contracts",
+                vendorService.orders(readScope(session), "CONTRACTED"));
+        return "vendor/contracts";
+    }
+
     @PostMapping("/quotes/{quoteId}")
     public String submitQuote(@PathVariable long quoteId,
             @RequestParam BigDecimal unitPrice, @RequestParam LocalDate deliveryDate,
