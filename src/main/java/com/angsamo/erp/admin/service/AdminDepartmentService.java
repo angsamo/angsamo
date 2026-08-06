@@ -34,8 +34,10 @@ public class AdminDepartmentService {
 
 	@Transactional
 	public void update(Long departmentId, DepartmentForm form) {
-		normalizeAndValidate(form);
-		checkDuplicate(form.getDepartmentCode(), departmentId);
+		// 이미 사용 중인 department_code는 임의로 변경하지 않는다. 이름과 사용 여부만 수정한다.
+		String name = form.getDepartmentName() == null ? "" : form.getDepartmentName().trim();
+		if (name.isBlank()) throw new IllegalArgumentException("부서명을 입력하세요.");
+		form.setDepartmentName(name);
 		adminDepartmentMapper.update(departmentId, form);
 	}
 

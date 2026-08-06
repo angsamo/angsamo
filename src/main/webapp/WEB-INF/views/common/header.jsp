@@ -6,8 +6,8 @@
 			<span class="material-symbols-outlined">menu</span>
 		</button>
 		<div>
-			<p class="breadcrumb">관리자 / 대시보드</p>
-			<strong>통합 업무 관리</strong>
+			<p class="breadcrumb"><c:out value="${breadcrumb}" default="관리자 / 대시보드"/></p>
+			<strong><c:out value="${pageTitle}" default="통합 업무 관리"/></strong>
 		</div>
 	</div>
 	<div class="topbar-actions">

@@ -9,9 +9,13 @@ import org.springframework.transaction.annotation.Transactional;
 import com.angsamo.erp.admin.dto.UserListItem;
 import com.angsamo.erp.admin.dto.UserForm;
 import com.angsamo.erp.admin.mapper.AdminUserMapper;
+import com.angsamo.erp.common.paging.PageRequest;
+import com.angsamo.erp.common.paging.PageResult;
 
 @Service
 public class AdminUserService {
+	public static final int PAGE_SIZE = 20;
+
 	private final AdminUserMapper adminUserMapper;
 	private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -22,6 +26,31 @@ public class AdminUserService {
 	@Transactional(readOnly = true)
 	public List<UserListItem> getUsers() {
 		return adminUserMapper.findAll();
+	}
+
+	@Transactional(readOnly = true)
+	public PageResult<UserListItem> getUsers(Integer page, String status) {
+		Boolean active = toActiveFilter(status);
+		PageRequest pageRequest = new PageRequest(page, PAGE_SIZE);
+		List<UserListItem> items = adminUserMapper.findPage(pageRequest.getOffset(), pageRequest.getSize(), active);
+		long totalCount = adminUserMapper.count(active);
+		return new PageResult<>(items, pageRequest.getPage(), pageRequest.getSize(), totalCount);
+	}
+
+	private Boolean toActiveFilter(String status) {
+		if ("active".equals(status)) return true;
+		if ("suspended".equals(status)) return false;
+		return null;
+	}
+
+	@Transactional(readOnly = true)
+	public long countActive() {
+		return adminUserMapper.countByActive(true);
+	}
+
+	@Transactional(readOnly = true)
+	public long countInactive() {
+		return adminUserMapper.countByActive(false);
 	}
 
 	@Transactional(readOnly = true)

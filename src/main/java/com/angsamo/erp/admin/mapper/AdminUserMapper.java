@@ -11,6 +11,9 @@ import com.angsamo.erp.admin.dto.UserForm;
 @Mapper
 public interface AdminUserMapper {
 	List<UserListItem> findAll();
+	List<UserListItem> findPage(@Param("offset") int offset, @Param("size") int size, @Param("active") Boolean active);
+	long count(@Param("active") Boolean active);
+	long countByActive(@Param("active") boolean active);
 	UserListItem findById(Long userId);
 	int countByLoginId(String loginId);
 	void insert(UserForm form);
