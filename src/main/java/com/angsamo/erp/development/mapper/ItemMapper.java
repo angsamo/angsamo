@@ -12,6 +12,10 @@ public interface ItemMapper {
 
     List<Item> findAll();
 
+    List<Item> search(
+            @Param("keyword") String keyword,
+            @Param("itemType") String itemType);
+
     Item findByItemId(@Param("itemId") Long itemId);
 
     Item findByItemCode(@Param("itemCode") String itemCode);

@@ -279,6 +279,18 @@
             </div>
         </c:if>
 
+        <c:if test="${empty parentItem}">
+            <form method="get"
+                  action="${pageContext.request.contextPath}/development/boms"
+                  style="display:flex; gap:10px; margin-bottom:18px; padding:16px; background:#fff; border:1px solid var(--border); border-radius:8px;">
+                <input type="search" name="keyword" value="<c:out value='${keyword}' />"
+                       placeholder="완제품 또는 구성 자재 코드·이름"
+                       style="flex:1; padding:10px 12px; border:1px solid var(--border); border-radius:6px;">
+                <button class="primary-button" type="submit">검색</button>
+                <a class="secondary-button" href="${pageContext.request.contextPath}/development/boms">초기화</a>
+            </form>
+        </c:if>
+
         <section class="panel table-panel">
 
             <div class="panel-header">

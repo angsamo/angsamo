@@ -46,7 +46,7 @@
 				<span class="nav-arrow material-symbols-outlined">chevron_right</span>
 			</a>
 			<div class="submenu">
-				<a href="#">개발 현황</a>
+				<a href="${pageContext.request.contextPath}/development">개발 현황</a>
 				<a href="${pageContext.request.contextPath}/development/items">품목 관리</a>
 				<a href="${pageContext.request.contextPath}/development/boms">BOM 관리</a>
 			</div>
@@ -110,7 +110,7 @@
 
 		<c:if test="${sessionScope.loginUser.role == 'ADMIN' or sessionScope.loginUser.role == 'VENDOR'}">
 		<div class="nav-group">
-			<a class="nav-link" href="#">
+			<a class="nav-link" href="${pageContext.request.contextPath}/vendor">
 				<span class="material-symbols-outlined">handshake</span>
 				<span>협력회사</span>
 				<span class="nav-arrow material-symbols-outlined">chevron_right</span>

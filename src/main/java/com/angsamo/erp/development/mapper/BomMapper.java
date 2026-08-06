@@ -11,6 +11,8 @@ import com.angsamo.erp.development.domain.Bom;
 public interface BomMapper {
 	List<Bom> findAll();
 
+	List<Bom> search(@Param("keyword") String keyword);
+
 	Bom findByBomId(@Param("bomId") Long bomId);
 
 	Bom findByParentAndComponent(

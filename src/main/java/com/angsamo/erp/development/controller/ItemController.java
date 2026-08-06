@@ -7,32 +7,45 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.angsamo.erp.development.domain.Item;
+import com.angsamo.erp.development.service.DevelopmentAccessPolicy;
 import com.angsamo.erp.development.service.ItemService;
+import com.angsamo.erp.common.session.LoginUser;
+
+import jakarta.servlet.http.HttpSession;
 
 @Controller
 @RequestMapping("/development/items")
 public class ItemController {
 
     private final ItemService itemService;
+    private final DevelopmentAccessPolicy accessPolicy;
 
-    public ItemController(ItemService itemService) {
+    public ItemController(ItemService itemService, DevelopmentAccessPolicy accessPolicy) {
         this.itemService = itemService;
+        this.accessPolicy = accessPolicy;
     }
 
     // 품목 목록
     @GetMapping
-    public String list(Model model) {
-        model.addAttribute("items", itemService.findAll());
+    public String list(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String itemType,
+            Model model) {
+        model.addAttribute("items", itemService.search(keyword, itemType));
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("itemType", itemType);
 
         return "development/item-list";
     }
 
     // 품목 등록 화면
     @GetMapping("/new")
-    public String createForm(Model model) {
+    public String createForm(Model model, HttpSession session) {
+        requireManager(session);
         Item item = new Item();
 
         item.setUnit("EA");
@@ -48,8 +61,10 @@ public class ItemController {
     public String create(
             @ModelAttribute Item item,
             Model model,
-            RedirectAttributes redirectAttributes
+            RedirectAttributes redirectAttributes,
+            HttpSession session
     ) {
+        requireManager(session);
         try {
             Long itemId = itemService.insert(item);
 
@@ -77,8 +92,10 @@ public class ItemController {
     public String detail(
             @PathVariable Long itemId,
             Model model,
-            RedirectAttributes redirectAttributes
+            RedirectAttributes redirectAttributes,
+            HttpSession session
     ) {
+        requireManager(session);
         Item item = itemService.findByItemId(itemId);
 
         if (item == null) {
@@ -124,8 +141,10 @@ public class ItemController {
             @PathVariable Long itemId,
             @ModelAttribute Item item,
             Model model,
-            RedirectAttributes redirectAttributes
+            RedirectAttributes redirectAttributes,
+            HttpSession session
     ) {
+        requireManager(session);
         try {
             item.setItemId(itemId);
 
@@ -161,8 +180,10 @@ public class ItemController {
     @PostMapping("/{itemId}/delete")
     public String deactivate(
             @PathVariable Long itemId,
-            RedirectAttributes redirectAttributes
+            RedirectAttributes redirectAttributes,
+            HttpSession session
     ) {
+        requireManager(session);
         try {
             boolean deactivated = itemService.deactivate(itemId);
 
@@ -190,5 +211,11 @@ public class ItemController {
 
             return "redirect:/development/items";
         }
+    }
+
+    private void requireManager(HttpSession session) {
+        accessPolicy.requireManager(
+                (LoginUser) session.getAttribute(LoginUser.SESSION_KEY)
+        );
     }
 }

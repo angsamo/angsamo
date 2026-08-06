@@ -38,6 +38,34 @@
             component_item.item_code
     </select>
 
+    <select id="search"
+            resultType="com.angsamo.erp.development.domain.Bom">
+        SELECT
+            b.bom_id,
+            b.parent_item_id,
+            b.component_item_id,
+            b.required_qty,
+            b.created_at,
+            b.updated_at,
+            parent_item.item_code AS parent_item_code,
+            parent_item.item_name AS parent_item_name,
+            component_item.item_code AS component_item_code,
+            component_item.item_name AS component_item_name,
+            component_item.unit AS component_unit
+        FROM bom b
+        JOIN item parent_item
+          ON parent_item.item_id = b.parent_item_id
+        JOIN item component_item
+          ON component_item.item_id = b.component_item_id
+        <if test="keyword != null and keyword != ''">
+            WHERE parent_item.item_code LIKE CONCAT('%', #{keyword}, '%')
+               OR parent_item.item_name LIKE CONCAT('%', #{keyword}, '%')
+               OR component_item.item_code LIKE CONCAT('%', #{keyword}, '%')
+               OR component_item.item_name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        ORDER BY parent_item.item_code, component_item.item_code
+    </select>
+
 
     <!-- BOM 상세 조회 -->
     <select id="findByBomId"
