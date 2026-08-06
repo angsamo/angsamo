@@ -9,12 +9,17 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.angsamo.erp.development.domain.Bom;
 import com.angsamo.erp.development.domain.Item;
+import com.angsamo.erp.development.service.DevelopmentAccessPolicy;
 import com.angsamo.erp.development.service.BomService;
 import com.angsamo.erp.development.service.ItemService;
+import com.angsamo.erp.common.session.LoginUser;
+
+import jakarta.servlet.http.HttpSession;
 
 @Controller
 @RequestMapping("/development/boms")
@@ -22,19 +27,25 @@ public class BomController {
 
     private final BomService bomService;
     private final ItemService itemService;
+    private final DevelopmentAccessPolicy accessPolicy;
 
     public BomController(
             BomService bomService,
-            ItemService itemService
+            ItemService itemService,
+            DevelopmentAccessPolicy accessPolicy
     ) {
         this.bomService = bomService;
         this.itemService = itemService;
+        this.accessPolicy = accessPolicy;
     }
 
     // 전체 BOM 목록
     @GetMapping
-    public String list(Model model) {
-        model.addAttribute("boms", bomService.findAll());
+    public String list(
+            @RequestParam(required = false) String keyword,
+            Model model) {
+        model.addAttribute("boms", bomService.search(keyword));
+        model.addAttribute("keyword", keyword);
 
         return "development/bom-list";
     }
@@ -68,7 +79,8 @@ public class BomController {
 
     // BOM 등록 화면
     @GetMapping("/new")
-    public String createForm(Model model) {
+    public String createForm(Model model, HttpSession session) {
+        requireManager(session);
         addItemOptions(model);
 
         if (!model.containsAttribute("bom")) {
@@ -83,8 +95,10 @@ public class BomController {
     public String create(
             @ModelAttribute Bom bom,
             Model model,
-            RedirectAttributes redirectAttributes
+            RedirectAttributes redirectAttributes,
+            HttpSession session
     ) {
+        requireManager(session);
         try {
             Long bomId = bomService.insert(bom);
 
@@ -110,8 +124,10 @@ public class BomController {
     public String detail(
             @PathVariable Long bomId,
             Model model,
-            RedirectAttributes redirectAttributes
+            RedirectAttributes redirectAttributes,
+            HttpSession session
     ) {
+        requireManager(session);
         Bom bom = bomService.findByBomId(bomId);
 
         if (bom == null) {
@@ -157,8 +173,10 @@ public class BomController {
             @PathVariable Long bomId,
             @ModelAttribute Bom bom,
             Model model,
-            RedirectAttributes redirectAttributes
+            RedirectAttributes redirectAttributes,
+            HttpSession session
     ) {
+        requireManager(session);
         try {
             bom.setBomId(bomId);
 
@@ -196,8 +214,10 @@ public class BomController {
     @PostMapping("/{bomId}/delete")
     public String delete(
             @PathVariable Long bomId,
-            RedirectAttributes redirectAttributes
+            RedirectAttributes redirectAttributes,
+            HttpSession session
     ) {
+        requireManager(session);
         boolean deleted = bomService.delete(bomId);
 
         if (deleted) {
@@ -228,5 +248,11 @@ public class BomController {
 
         model.addAttribute("productItems", productItems);
         model.addAttribute("materialItems", materialItems);
+    }
+
+    private void requireManager(HttpSession session) {
+        accessPolicy.requireManager(
+                (LoginUser) session.getAttribute(LoginUser.SESSION_KEY)
+        );
     }
 }

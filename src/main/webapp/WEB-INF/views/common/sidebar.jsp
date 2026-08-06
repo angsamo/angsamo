@@ -35,7 +35,7 @@
 				<span class="nav-arrow material-symbols-outlined">chevron_right</span>
 			</a>
 			<div class="submenu">
-				<a href="#">개발 현황</a>
+				<a href="${pageContext.request.contextPath}/development">개발 현황</a>
 				<a href="${pageContext.request.contextPath}/development/items">품목 관리</a>
 				<a href="${pageContext.request.contextPath}/development/boms">BOM 관리</a>
 			</div>
@@ -89,18 +89,18 @@
 		</div>
 
 		<div class="nav-group">
-			<a class="nav-link" href="#">
+			<a class="nav-link" href="${pageContext.request.contextPath}/vendor">
 				<span class="material-symbols-outlined">handshake</span>
 				<span>협력회사</span>
 				<span class="nav-arrow material-symbols-outlined">chevron_right</span>
 			</a>
 			<div class="submenu">
-				<a href="#">협력 현황</a>
-				<a href="#">견적 관리</a>
-				<a href="#">발주 관리</a>
-				<a href="#">제작·출하</a>
-				<a href="#">보완·반품</a>
-				<a href="#">거래명세서</a>
+				<a href="${pageContext.request.contextPath}/vendor">협력 현황</a>
+				<a href="${pageContext.request.contextPath}/vendor/quotes">견적 관리</a>
+				<a href="${pageContext.request.contextPath}/vendor/orders">발주 관리</a>
+				<a href="${pageContext.request.contextPath}/vendor/shipments">제작·출하</a>
+				<a href="${pageContext.request.contextPath}/vendor/returns">보완·반품</a>
+				<a href="${pageContext.request.contextPath}/vendor/statements">거래명세서</a>
 			</div>
 		</div>
 	</nav>

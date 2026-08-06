@@ -22,6 +22,21 @@ public class ItemService {
         return itemMapper.findAll();
     }
 
+    public List<Item> search(String keyword, String itemType) {
+        String normalizedKeyword = normalizeSearchValue(keyword);
+        String normalizedType = normalizeSearchValue(itemType);
+
+        if (normalizedType != null) {
+            normalizedType = normalizedType.toUpperCase();
+            if (!normalizedType.equals("PRODUCT")
+                    && !normalizedType.equals("MATERIAL")) {
+                normalizedType = null;
+            }
+        }
+
+        return itemMapper.search(normalizedKeyword, normalizedType);
+    }
+
     // 품목 식별번호로 상세 조회
     public Item findByItemId(Long itemId) {
         return itemMapper.findByItemId(itemId);
@@ -175,5 +190,9 @@ public class ItemService {
                     "기준 단가는 0 이상이어야 합니다."
             );
         }
+    }
+
+    private String normalizeSearchValue(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 }

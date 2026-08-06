@@ -64,7 +64,10 @@
 		i.unit,
 		mr.request_qty AS requestQty,
 		mr.issued_qty AS issuedQty,
-		(mr.request_qty - mr.issued_qty) AS shortageQty,
+		GREATEST(
+			mr.request_qty - mr.issued_qty - COALESCE(inv.current_qty, 0),
+			0
+		) AS shortageQty,
 		mr.required_date AS requiredDate,
 		mr.status,
 		mr.requested_by AS requestedBy,
@@ -74,7 +77,14 @@
 		INNER JOIN item i ON i.item_id = mr.item_id
 		INNER JOIN department d ON d.department_id = mr.department_id
 		INNER JOIN app_user u ON u.user_id = mr.requested_by
-		WHERE mr.status = 'SHORTAGE'
+		LEFT JOIN inventory inv
+		  ON inv.item_id = mr.item_id
+		 AND inv.department_id = mr.department_id
+		WHERE mr.status IN ('REQUESTED', 'PARTIAL')
+		AND GREATEST(
+			mr.request_qty - mr.issued_qty - COALESCE(inv.current_qty, 0),
+			0
+		) &gt; 0
 		AND NOT EXISTS (
 		SELECT 1
 		FROM procurement p
@@ -273,15 +283,25 @@
             i.unit,
             mr.request_qty AS requestQty,
             mr.issued_qty AS issuedQty,
-            (mr.request_qty - mr.issued_qty) AS shortageQty,
+            GREATEST(
+                mr.request_qty - mr.issued_qty - COALESCE(inv.current_qty, 0),
+                0
+            ) AS shortageQty,
             mr.required_date AS requiredDate,
             mr.status,
             mr.requested_by AS requestedBy,
             mr.created_at AS createdAt
         FROM material_request mr
         INNER JOIN item i ON i.item_id = mr.item_id
+        LEFT JOIN inventory inv
+          ON inv.item_id = mr.item_id
+         AND inv.department_id = mr.department_id
         WHERE mr.request_id = #{requestId}
-          AND mr.status = 'SHORTAGE'
+          AND mr.status IN ('REQUESTED', 'PARTIAL')
+          AND GREATEST(
+              mr.request_qty - mr.issued_qty - COALESCE(inv.current_qty, 0),
+              0
+          ) &gt; 0
         FOR UPDATE
     </select>
 
@@ -307,15 +327,24 @@
             #{departmentId},
             mr.request_id,
             mr.item_id,
-            (mr.request_qty - mr.issued_qty),
+            GREATEST(
+                mr.request_qty - mr.issued_qty - COALESCE(inv.current_qty, 0),
+                0
+            ),
             mr.required_date,
             #{quoteDeadline},
             'REQUESTED',
             #{createdBy}
         FROM material_request mr
+        LEFT JOIN inventory inv
+          ON inv.item_id = mr.item_id
+         AND inv.department_id = mr.department_id
         WHERE mr.request_id = #{materialRequestId}
-          AND mr.status = 'SHORTAGE'
-          AND (mr.request_qty - mr.issued_qty) > 0
+          AND mr.status IN ('REQUESTED', 'PARTIAL')
+          AND GREATEST(
+              mr.request_qty - mr.issued_qty - COALESCE(inv.current_qty, 0),
+              0
+          ) &gt; 0
     </insert>
 
     <update id="updateProcurement">

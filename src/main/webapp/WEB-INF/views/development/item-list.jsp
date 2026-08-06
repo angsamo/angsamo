@@ -160,6 +160,21 @@
             </div>
         </c:if>
 
+        <form method="get"
+              action="${pageContext.request.contextPath}/development/items"
+              style="display:flex; gap:10px; margin-bottom:18px; padding:16px; background:#fff; border:1px solid var(--border); border-radius:8px;">
+            <input type="search" name="keyword" value="<c:out value='${keyword}' />"
+                   placeholder="품목코드 또는 품목명"
+                   style="flex:1; padding:10px 12px; border:1px solid var(--border); border-radius:6px;">
+            <select name="itemType" style="min-width:150px; padding:10px 12px; border:1px solid var(--border); border-radius:6px;">
+                <option value="">전체 유형</option>
+                <option value="PRODUCT" ${itemType == 'PRODUCT' ? 'selected' : ''}>완제품</option>
+                <option value="MATERIAL" ${itemType == 'MATERIAL' ? 'selected' : ''}>자재</option>
+            </select>
+            <button class="primary-button" type="submit">검색</button>
+            <a class="secondary-button" href="${pageContext.request.contextPath}/development/items">초기화</a>
+        </form>
+
         <section class="panel">
 
             <div class="panel-header">
