@@ -1,32 +1,66 @@
 package com.angsamo.erp.admin.controller;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
+import org.springframework.http.HttpStatus;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.angsamo.erp.admin.dto.DepartmentForm;
 import com.angsamo.erp.admin.service.AdminDepartmentService;
-import com.angsamo.erp.common.session.LoginUser;
-
-import jakarta.servlet.http.HttpSession;
+import com.angsamo.erp.admin.service.AdminUserService;
 
 @Controller
 public class AdminDepartmentController {
 	private final AdminDepartmentService adminDepartmentService;
+	private final AdminUserService adminUserService;
 
-	public AdminDepartmentController(AdminDepartmentService adminDepartmentService) {
+	public AdminDepartmentController(AdminDepartmentService adminDepartmentService, AdminUserService adminUserService) {
 		this.adminDepartmentService = adminDepartmentService;
+		this.adminUserService = adminUserService;
 	}
 
 	@GetMapping("/admin/departments")
-	public String departments(Model model, HttpSession session) {
-		LoginUser loginUser = (LoginUser) session.getAttribute(LoginUser.SESSION_KEY);
-		if (loginUser == null || !"ADMIN".equals(loginUser.getRole())) {
-			throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-		}
-
+	public String departments(Model model) {
 		model.addAttribute("departments", adminDepartmentService.getDepartments());
-		return "admin/departments";
+		return "admin/department-management";
+	}
+
+	@GetMapping("/admin/departments/{departmentId}")
+	public String detail(@PathVariable Long departmentId, Model model) {
+		var department = adminDepartmentService.getDepartment(departmentId);
+		if (department == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+		model.addAttribute("department", department);
+		model.addAttribute("users", adminUserService.getUsers().stream()
+				.filter(user -> departmentId.equals(user.getDepartmentId())).toList());
+		return "admin/department-detail";
+	}
+
+	@PostMapping("/admin/departments")
+	public String create(DepartmentForm form, RedirectAttributes redirect) {
+		return run(() -> adminDepartmentService.create(form), "\uBD80\uC11C\uB97C \uB4F1\uB85D\uD588\uC2B5\uB2C8\uB2E4.", redirect);
+	}
+
+	@PostMapping("/admin/departments/{departmentId}")
+	public String update(@PathVariable Long departmentId, DepartmentForm form, RedirectAttributes redirect) {
+		return run(() -> adminDepartmentService.update(departmentId, form), "\uBD80\uC11C \uC815\uBCF4\uB97C \uC218\uC815\uD588\uC2B5\uB2C8\uB2E4.", redirect);
+	}
+
+	@PostMapping("/admin/departments/{departmentId}/deactivate")
+	public String deactivate(@PathVariable Long departmentId, RedirectAttributes redirect) {
+		return run(() -> adminDepartmentService.deactivate(departmentId), "\uBD80\uC11C\uB97C \uBE44\uD65C\uC131\uD654\uD588\uC2B5\uB2C8\uB2E4.", redirect);
+	}
+
+	private String run(Runnable action, String message, RedirectAttributes redirect) {
+		try {
+			action.run();
+			redirect.addFlashAttribute("success", message);
+		} catch (IllegalArgumentException e) {
+			redirect.addFlashAttribute("error", e.getMessage());
+		}
+		return "redirect:/admin/departments";
 	}
 }

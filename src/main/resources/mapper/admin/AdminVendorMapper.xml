@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.angsamo.erp.admin.mapper.AdminVendorMapper">
+	<select id="findAll" resultType="com.angsamo.erp.admin.dto.VendorItem">
+		SELECT vendor_id, vendor_code, vendor_name, active, created_at, updated_at FROM vendor ORDER BY vendor_id
+	</select>
+	<select id="findById" resultType="com.angsamo.erp.admin.dto.VendorItem">
+		SELECT vendor_id, vendor_code, vendor_name, active, created_at, updated_at FROM vendor WHERE vendor_id = #{vendorId}
+	</select>
+	<select id="countByCode" resultType="int">SELECT COUNT(*) FROM vendor WHERE vendor_code = #{vendorCode}</select>
+	<insert id="insert">INSERT INTO vendor (vendor_code, vendor_name, active) VALUES (#{vendorCode}, #{vendorName}, 1)</insert>
+	<update id="update">UPDATE vendor SET vendor_name = #{vendorName} WHERE vendor_id = #{vendorId}</update>
+</mapper>

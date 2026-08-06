@@ -13,8 +13,7 @@ public class HomeController {
 	@GetMapping("/")
 	public String home(Model model, HttpSession session) {
 		if (session.getAttribute(LoginUser.SESSION_KEY) == null) {
-			session.setAttribute(LoginUser.SESSION_KEY,
-					new LoginUser(1L, "admin", "최고 관리자", "ADMIN", null, null, null));
+			return "redirect:/login";
 		}
 
 		model.addAttribute("projectName", "앙사모 ERP");
