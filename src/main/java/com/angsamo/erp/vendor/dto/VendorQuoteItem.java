@@ -16,6 +16,7 @@ public class VendorQuoteItem {
     private Long quoteId;
     private Long procurementId;
     private Long vendorId;
+    private Long selectedVendorId;
     private String vendorName;
     private String itemCode;
     private String itemName;
@@ -29,4 +30,6 @@ public class VendorQuoteItem {
     private LocalDate deliveryDate;
     private String terms;
     private LocalDateTime submittedAt;
+
+    public boolean isSelected() { return selectedVendorId != null && selectedVendorId.equals(vendorId); }
 }
