@@ -140,6 +140,29 @@ class PurchaseServiceTests {
     }
 
     @Test
+    void shortageRequestCreatesProcurement() {
+        ProcurementCreateForm form = new ProcurementCreateForm();
+        form.setMaterialRequestId(10L);
+        form.setQuoteDeadline(LocalDate.now().plusDays(2));
+
+        ShortageMaterialRequestItem shortage =
+                createShortage(10L, LocalDate.now().plusDays(5));
+
+        when(purchaseMapper.findShortageForUpdate(10L))
+                .thenReturn(shortage);
+        when(purchaseMapper.countActiveProcurementByRequest(10L))
+                .thenReturn(0);
+        when(purchaseMapper.insertProcurement(
+                10L, 4L, form.getQuoteDeadline(), 1L))
+                .thenReturn(1);
+
+        purchaseService.createProcurement(form, 1L, 4L, false);
+
+        verify(purchaseMapper).insertProcurement(
+                10L, 4L, form.getQuoteDeadline(), 1L);
+    }
+
+    @Test
     void quoteDeadlineAfterRequiredDateIsRejected() {
         ProcurementCreateForm form = new ProcurementCreateForm();
         form.setMaterialRequestId(10L);
@@ -228,6 +251,100 @@ class PurchaseServiceTests {
                 .insertVendorQuote(20L, 2L);
         verify(purchaseMapper, times(1))
                 .updateProcurementToQuoting(20L, 4L, false);
+    }
+
+    @Test
+    void submittedQuoteCanBeSelected() {
+        when(purchaseMapper.selectProcurementQuote(20L, 30L, 4L, false))
+                .thenReturn(1);
+        when(purchaseMapper.markQuoteSelected(20L, 30L))
+                .thenReturn(1);
+
+        purchaseService.selectQuote(20L, 30L, 4L, false);
+
+        verify(purchaseMapper).markQuoteSelected(20L, 30L);
+        verify(purchaseMapper).rejectOtherQuotes(20L, 30L);
+    }
+
+    @Test
+    void unavailableQuoteCannotBeSelected() {
+        when(purchaseMapper.selectProcurementQuote(20L, 30L, 4L, false))
+                .thenReturn(0);
+
+        assertThrows(IllegalStateException.class,
+                () -> purchaseService.selectQuote(20L, 30L, 4L, false));
+
+        verify(purchaseMapper, never()).markQuoteSelected(anyLong(), anyLong());
+        verify(purchaseMapper, never()).rejectOtherQuotes(anyLong(), anyLong());
+    }
+
+    @Test
+    void selectedProcurementCanConfirmContract() {
+        when(purchaseMapper.confirmContract(
+                20L, "검수 후 30일 이내 지급", 4L, false))
+                .thenReturn(1);
+
+        purchaseService.confirmContract(
+                20L, "  검수 후 30일 이내 지급  ", 4L, false);
+
+        verify(purchaseMapper).confirmContract(
+                20L, "검수 후 30일 이내 지급", 4L, false);
+    }
+
+    @Test
+    void blankContractTermsAreRejected() {
+        assertThrows(IllegalArgumentException.class,
+                () -> purchaseService.confirmContract(20L, "  ", 4L, false));
+
+        verify(purchaseMapper, never()).confirmContract(
+                anyLong(), any(), anyLong(),
+                org.mockito.ArgumentMatchers.anyBoolean());
+    }
+
+    @Test
+    void contractedProcurementCanBeOrdered() {
+        BigDecimal orderQty = new BigDecimal("8.000");
+        LocalDate requiredDate = LocalDate.now().plusDays(7);
+
+        when(purchaseMapper.issuePurchaseOrder(
+                20L, orderQty, requiredDate, 4L, false))
+                .thenReturn(1);
+
+        purchaseService.issuePurchaseOrder(
+                20L, orderQty, requiredDate, 4L, false);
+
+        verify(purchaseMapper).issuePurchaseOrder(
+                20L, orderQty, requiredDate, 4L, false);
+    }
+
+    @Test
+    void zeroQuantityPurchaseOrderIsRejected() {
+        assertThrows(IllegalArgumentException.class,
+                () -> purchaseService.issuePurchaseOrder(
+                        20L, BigDecimal.ZERO, LocalDate.now().plusDays(7), 4L, false));
+
+        verify(purchaseMapper, never()).issuePurchaseOrder(
+                anyLong(), any(), any(), anyLong(),
+                org.mockito.ArgumentMatchers.anyBoolean());
+    }
+
+    @Test
+    void acceptedFullReceivingCanCloseOrder() {
+        when(purchaseMapper.closeReceivedOrder(20L, 4L, false))
+                .thenReturn(1);
+
+        purchaseService.closeReceivedOrder(20L, 4L, false);
+
+        verify(purchaseMapper).closeReceivedOrder(20L, 4L, false);
+    }
+
+    @Test
+    void incompleteReceivingCannotCloseOrder() {
+        when(purchaseMapper.closeReceivedOrder(20L, 4L, false))
+                .thenReturn(0);
+
+        assertThrows(IllegalStateException.class,
+                () -> purchaseService.closeReceivedOrder(20L, 4L, false));
     }
 
     private ShortageMaterialRequestItem createShortage(

@@ -86,6 +86,12 @@
                                 <th>원본 자재요청번호</th>
                                 <td><c:out value="${procurement.materialRequestId}" default="없음" /></td>
                             </tr>
+                            <tr>
+                                <th>생산계획번호</th>
+                                <td><c:out value="${procurement.productionPlanId}" default="없음" /></td>
+                                <th>자재 필요일</th>
+                                <td><c:out value="${procurement.materialRequestRequiredDate}" default="-" /></td>
+                            </tr>
                             <c:if test="${not empty procurement.materialRequestId}">
                                 <tr>
                                     <th>자재요청 상태</th>
@@ -161,7 +167,70 @@
 				    </form>
 				</c:if>
 
-           		<section class="panel table-panel">
+                <c:if test="${procurement.status == 'SELECTED'}">
+                    <section class="panel">
+                        <div class="panel-header">
+                            <div>
+                                <p class="eyebrow">CONTRACT</p>
+                                <h2>계약조건 확정</h2>
+                            </div>
+                        </div>
+                        <p>계약번호는 확정 후 CT-${procurement.procurementId}로 등록됩니다.</p>
+                        <form method="post"
+                              action="${pageContext.request.contextPath}/purchase/procurements/${procurement.procurementId}/contract"
+                              onsubmit="return confirm('이 조건으로 계약을 확정하시겠습니까?');">
+                            <label for="contractTerms">확정 계약조건</label>
+                            <textarea id="contractTerms"
+                                      name="terms"
+                                      maxlength="1000"
+                                      rows="6"
+                                      required><c:out value="${procurement.terms}" /></textarea>
+                            <button class="action-button" type="submit">계약 확정</button>
+                        </form>
+                    </section>
+                </c:if>
+
+                <c:if test="${procurement.status == 'CONTRACTED'}">
+                    <p class="flash success">
+                        계약 CT-${procurement.procurementId} · 협력회사 통보 완료
+                    </p>
+                    <section class="panel">
+                        <div class="panel-header">
+                            <div>
+                                <p class="eyebrow">PURCHASE ORDER</p>
+                                <h2>구매 발주 전달</h2>
+                            </div>
+                        </div>
+                        <p>발주번호는 전달 후 PO-${procurement.procurementId}로 등록됩니다.</p>
+                        <form method="post"
+                              action="${pageContext.request.contextPath}/purchase/procurements/${procurement.procurementId}/order"
+                              onsubmit="return confirm('선정 협력회사에 발주를 전달하시겠습니까?');">
+                            <label for="orderQty">발주 수량</label>
+                            <input id="orderQty"
+                                   type="number"
+                                   name="orderQty"
+                                   min="0.001"
+                                   step="0.001"
+                                   value="${procurement.orderQty}"
+                                   required>
+                            <label for="orderRequiredDate">요구 납기일</label>
+                            <input id="orderRequiredDate"
+                                   type="date"
+                                   name="requiredDate"
+                                   value="${procurement.requiredDate}"
+                                   required>
+                            <button class="action-button" type="submit">발주 전달</button>
+                        </form>
+                    </section>
+                </c:if>
+
+                <c:if test="${procurement.status == 'ORDERED'}">
+                    <p class="flash success">
+                        발주 PO-${procurement.procurementId} · 협력회사 전달 완료
+                    </p>
+                </c:if>
+
+            		<section class="panel table-panel">
                 <div class="panel-header">
                     <div>
                         <p class="eyebrow">VENDOR &amp; ORDER</p>

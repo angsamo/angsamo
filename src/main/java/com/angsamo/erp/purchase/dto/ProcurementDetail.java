@@ -18,6 +18,7 @@ public class ProcurementDetail {
     private String departmentName;
 
     private Long materialRequestId;
+    private Long productionPlanId;
     private String materialRequestStatus;
     private BigDecimal materialRequestQty;
     private BigDecimal materialRequestIssuedQty;

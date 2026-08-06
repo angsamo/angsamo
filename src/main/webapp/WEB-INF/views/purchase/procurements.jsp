@@ -56,6 +56,7 @@
                             <tr>
                                 <th>조달번호</th>
                                 <th>요청번호</th>
+                                <th>생산계획번호</th>
                                 <th>담당부서</th>
                                 <th>품목코드</th>
                                 <th>품목명</th>
@@ -80,6 +81,7 @@
                                         </a>
                                     </td>
                                     <td><c:out value="${procurement.materialRequestId}" default="-" /></td>
+                                    <td><c:out value="${procurement.productionPlanId}" default="-" /></td>
                                     <td><c:out value="${procurement.departmentName}" /></td>
                                     <td><c:out value="${procurement.itemCode}" /></td>
                                     <td><c:out value="${procurement.itemName}" /></td>
@@ -112,7 +114,7 @@
 
                             <c:if test="${empty procurements}">
                                 <tr>
-                                    <td class="empty-cell" colspan="15">
+                                    <td class="empty-cell" colspan="16">
                                         등록된 조달업무가 없습니다.
                                     </td>
                                 </tr>

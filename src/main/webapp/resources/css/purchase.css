@@ -1,0 +1,105 @@
+.purchase-dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.purchase-dashboard-card {
+    display: block;
+    padding: 22px;
+    color: var(--text);
+    text-decoration: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.purchase-dashboard-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(25, 54, 93, 0.12);
+}
+
+.purchase-dashboard-card h2 {
+    margin: 8px 0 4px;
+    color: var(--blue);
+    font-size: 30px;
+}
+
+.purchase-dashboard-card p:last-child {
+    margin: 0;
+    color: var(--muted);
+}
+
+.purchase-action-button {
+    display: inline-flex;
+    min-height: 36px;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 13px;
+    border: 0;
+    border-radius: 5px;
+    color: #fff;
+    background: var(--blue);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.purchase-action-button:hover {
+    filter: brightness(0.94);
+}
+
+.purchase-flash {
+    margin: 0 0 16px;
+    padding: 12px 15px;
+    border: 1px solid;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.purchase-flash.success {
+    color: #14653f;
+    background: #e5f7ed;
+    border-color: #b8e1ca;
+}
+
+.purchase-flash.error {
+    color: #8a3940;
+    background: #fdebed;
+    border-color: #f4c5ca;
+}
+
+.purchase-wide-table {
+    min-width: 1120px;
+}
+
+.purchase-wide-table th,
+.purchase-wide-table td {
+    vertical-align: middle;
+}
+
+.purchase-date-stack {
+    min-width: 155px;
+    line-height: 1.7;
+}
+
+.purchase-date-stack span {
+    display: inline-block;
+    width: 34px;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+@media (max-width: 1050px) {
+    .purchase-dashboard-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 620px) {
+    .purchase-dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
