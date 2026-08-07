@@ -29,6 +29,7 @@ public interface MaterialMapper {
 	List<Map<String, Object>> findCloseReadyOrders();
 	Map<String, Object> findStatementPrint(long statementId);
 	Map<String, Object> lockShipment(long shipmentId);
+	Map<String, Object> lockReturn(long returnId);
 	Map<String, Object> lockIssue(long issueId);
 	Map<String, Object> lockInventory(@Param("departmentId") long departmentId, @Param("itemId") long itemId);
 	int createInventoryIfAbsent(@Param("departmentId") long departmentId, @Param("itemId") long itemId);
@@ -49,6 +50,7 @@ public interface MaterialMapper {
 	int updateIssue(@Param("issueId") long issueId, @Param("qty") java.math.BigDecimal qty,
 			@Param("status") String status, @Param("userId") long userId);
 	int updateReturnStatus(@Param("returnId") long returnId, @Param("status") String status);
+	int requestReturn(@Param("returnId") long returnId, @Param("reason") String reason);
 	int issueStatement(long procurementId);
 	int notifyStatement(long statementId);
 	int closePurchaseOrder(long poId);

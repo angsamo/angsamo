@@ -126,8 +126,21 @@
 		       mr.item_id itemId, i.item_code itemCode, i.item_name itemName,
 		       mr.request_qty releaseQty, mr.issued_qty issueQty, mr.status,
 		       mr.created_at requestedAt, mr.issued_at issuedAt,
+		       (SELECT p.department_id FROM procurement p
+		        WHERE p.material_request_id=mr.request_id
+		          AND COALESCE(p.received_qty,0)&gt;0
+		          AND p.status IN ('RECEIVED','STATEMENT_ISSUED','CLOSED')
+		        ORDER BY COALESCE(p.received_at,p.updated_at) DESC, p.procurement_id DESC
+		        LIMIT 1) inventoryDepartmentId,
 		       COALESCE((SELECT inv.current_qty FROM inventory inv
-		                 WHERE inv.item_id=mr.item_id AND inv.department_id=mr.department_id),0) availableQty,
+		                 WHERE inv.item_id=mr.item_id
+		                   AND inv.department_id=(
+		                       SELECT p.department_id FROM procurement p
+		                       WHERE p.material_request_id=mr.request_id
+		                         AND COALESCE(p.received_qty,0)&gt;0
+		                         AND p.status IN ('RECEIVED','STATEMENT_ISSUED','CLOSED')
+		                       ORDER BY COALESCE(p.received_at,p.updated_at) DESC, p.procurement_id DESC
+		                       LIMIT 1)),0) availableQty,
 		       mr.required_date scheduleDate, mr.request_qty requiredQty
 		FROM material_request mr
 		JOIN item i ON i.item_id=mr.item_id
@@ -142,16 +155,19 @@
 
 	<select id="findInventoryValueReport" resultType="map">
 		SELECT i.item_code itemCode, i.item_name itemName, 0 baseQty,
-		       COALESCE(SUM(CASE WHEN sm.movement_type='IN' THEN sm.quantity ELSE -sm.quantity END),0) availableQty,
-		       COALESCE(SUM(CASE WHEN sm.movement_type='IN' THEN sm.quantity ELSE -sm.quantity END),0) calcQty,
+		       COALESCE(SUM(inv.current_qty),0) availableQty,
+		       COALESCE(SUM(inv.current_qty),0) calcQty,
 		       COALESCE((SELECT vq.unit_price FROM vendor_quote vq JOIN procurement px ON px.procurement_id=vq.procurement_id
 		                 WHERE px.item_id=i.item_id ORDER BY vq.created_at DESC LIMIT 1),0) unitPrice,
-		       COALESCE(SUM(CASE WHEN sm.movement_type='IN' THEN sm.quantity ELSE -sm.quantity END),0)
+		       COALESCE(SUM(inv.current_qty),0)
 		         * COALESCE((SELECT vq.unit_price FROM vendor_quote vq JOIN procurement px ON px.procurement_id=vq.procurement_id
 		                     WHERE px.item_id=i.item_id ORDER BY vq.created_at DESC LIMIT 1),0) stockValue,
-		       MAX(sm.created_at) updatedAt,
-		       COALESCE(SUM(CASE WHEN sm.movement_type='OUT' THEN sm.quantity ELSE 0 END),0) periodIssueQty
-		FROM item i LEFT JOIN stock_movement sm ON sm.item_id=i.item_id
+		       MAX(inv.updated_at) updatedAt,
+		       COALESCE((SELECT SUM(sm.quantity) FROM stock_movement sm
+		                 WHERE sm.item_id=i.item_id AND sm.movement_type='OUT'
+		                 <if test="fromDate != null and fromDate != ''">AND DATE(sm.created_at)&gt;=#{fromDate}</if>
+		                 <if test="toDate != null and toDate != ''">AND DATE(sm.created_at)&lt;=#{toDate}</if>),0) periodIssueQty
+		FROM item i LEFT JOIN inventory inv ON inv.item_id=i.item_id
 		<where><if test="itemCode != null and itemCode != ''">AND i.item_code=#{itemCode}</if></where>
 		GROUP BY i.item_id,i.item_code,i.item_name
 		ORDER BY i.item_code
@@ -210,7 +226,7 @@
 	<select id="lockShipment" resultType="map">
 		SELECT p.procurement_id shipmentId,p.procurement_id poId,p.department_id departmentId,p.order_qty shipmentQty,
 		       p.item_id itemId,i.item_code itemCode,p.selected_vendor_id vendorId,
-		       p.status procurementStatus,
+		       p.status procurementStatus, p.inspection_result inspectionResult,
 		       COALESCE(p.unit_price,q.unit_price,0) supplyPrice,
 		       CASE WHEN p.received_at IS NULL AND COALESCE(p.received_qty,0)=0 THEN 0 ELSE 1 END alreadyReceived
 		FROM procurement p JOIN item i ON i.item_id=p.item_id
@@ -222,12 +238,33 @@
 		SELECT mr.request_id issueId,mr.department_id departmentId,mr.item_id itemId,i.item_code itemCode,
 		       mr.request_qty releaseQty,COALESCE(mr.issued_qty,0) issueQty,mr.status,
 		       i.active,
+		       (SELECT p.department_id FROM procurement p
+		        WHERE p.material_request_id=mr.request_id
+		          AND COALESCE(p.received_qty,0)&gt;0
+		          AND p.status IN ('RECEIVED','STATEMENT_ISSUED','CLOSED')
+		        ORDER BY COALESCE(p.received_at,p.updated_at) DESC, p.procurement_id DESC
+		        LIMIT 1) inventoryDepartmentId,
 		       COALESCE((SELECT inv.current_qty FROM inventory inv
-		                 WHERE inv.item_id=mr.item_id AND inv.department_id=mr.department_id),0) availableQty,
+		                 WHERE inv.item_id=mr.item_id
+		                   AND inv.department_id=(
+		                       SELECT p.department_id FROM procurement p
+		                       WHERE p.material_request_id=mr.request_id
+		                         AND COALESCE(p.received_qty,0)&gt;0
+		                         AND p.status IN ('RECEIVED','STATEMENT_ISSUED','CLOSED')
+		                       ORDER BY COALESCE(p.received_at,p.updated_at) DESC, p.procurement_id DESC
+		                       LIMIT 1)),0) availableQty,
 		       COALESCE((SELECT vq.unit_price FROM vendor_quote vq JOIN procurement p ON p.procurement_id=vq.procurement_id
 		                 WHERE p.item_id=mr.item_id ORDER BY vq.created_at DESC LIMIT 1),0) unitPrice
 		FROM material_request mr JOIN item i ON i.item_id=mr.item_id
 		WHERE mr.request_id=#{issueId} FOR UPDATE
+	</select>
+
+	<select id="lockReturn" resultType="map">
+		SELECT p.procurement_id returnId, p.status,
+		       GREATEST(COALESCE(p.order_qty,0)-COALESCE(p.received_qty,0),0) returnQty
+		FROM procurement p
+		WHERE p.procurement_id=#{returnId}
+		FOR UPDATE
 	</select>
 
 	<select id="lockInventory" resultType="map">
@@ -296,6 +333,12 @@
 
 	<update id="updateReturnStatus">
 		UPDATE procurement SET status=#{status} WHERE procurement_id=#{returnId}
+	</update>
+
+	<update id="requestReturn">
+		UPDATE procurement
+		SET status='RETURN_REQUESTED', terms=#{reason}, updated_at=NOW()
+		WHERE procurement_id=#{returnId} AND status='RETURNED'
 	</update>
 
 	<update id="issueStatement">

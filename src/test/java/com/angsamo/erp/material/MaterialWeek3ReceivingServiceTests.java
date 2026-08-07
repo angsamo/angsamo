@@ -66,6 +66,31 @@ class MaterialWeek3ReceivingServiceTests {
                 () -> service.inspectResult(11L, 5, "PARTIAL", null, true, true, true, 7L));
     }
 
+    @Test
+    void returnedQuantityMustMatchRejectedQuantity() {
+        Map<String, Object> row = new HashMap<>();
+        row.put("status", "RETURNED");
+        row.put("returnQty", 5);
+        when(mapper.lockReturn(11L)).thenReturn(row);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.registerReturn(11L, 4, "파손"));
+    }
+
+    @Test
+    void reshippedReturnCanBeReceivedAgain() {
+        Map<String, Object> row = shipment("SHIPPED", 5);
+        row.put("inspectionResult", "RETURNED");
+        when(mapper.lockShipment(11L)).thenReturn(row);
+        when(mapper.completeReceiving(11L, "ACCEPTED", 5, 0, null)).thenReturn(1);
+        when(mapper.adjustInventory(2L, 3L, new BigDecimal("5"))).thenReturn(1);
+
+        service.receiveReturn(11L, 7L);
+
+        verify(mapper).insertStockMovement(2L, 3L, "IN", new BigDecimal("5"),
+                "PROCUREMENT", 11L, 7L, null);
+    }
+
     private Map<String, Object> shipment(String status, int qty) {
         Map<String, Object> row = new HashMap<>();
         row.put("procurementStatus", status); row.put("alreadyReceived", 0);

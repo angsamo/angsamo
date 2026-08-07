@@ -104,10 +104,13 @@ public class VendorController {
     }
 
     @PostMapping("/orders/{procurementId}/ship")
-    public String ship(@PathVariable long procurementId, HttpSession session,
+    public String ship(@PathVariable long procurementId,
+            @RequestParam BigDecimal shipmentQty, @RequestParam LocalDate shipmentDate,
+            @RequestParam LocalDate expectedArrivalDate, HttpSession session,
             RedirectAttributes redirect) {
         return execute(redirect, "/vendor/shipments",
-                () -> vendorService.shipOrder(procurementId, requiredVendorId(session)),
+                () -> vendorService.shipOrder(procurementId, requiredVendorId(session), shipmentQty,
+                        shipmentDate, expectedArrivalDate),
                 "출하 처리를 완료했습니다.");
     }
 
@@ -120,9 +123,11 @@ public class VendorController {
 
     /** 잡리스트 SP03의 출하 등록 URL을 현재 procurement 상태 변경으로 처리한다. */
     @PostMapping("/orders/{procurementId}/shipment")
-    public String saveShipment(@PathVariable long procurementId, HttpSession session,
+    public String saveShipment(@PathVariable long procurementId,
+            @RequestParam BigDecimal shipmentQty, @RequestParam LocalDate shipmentDate,
+            @RequestParam LocalDate expectedArrivalDate, HttpSession session,
             RedirectAttributes redirect) {
-        return ship(procurementId, session, redirect);
+        return ship(procurementId, shipmentQty, shipmentDate, expectedArrivalDate, session, redirect);
     }
 
     @GetMapping("/inspections")
@@ -138,11 +143,34 @@ public class VendorController {
         return "vendor/inspection-detail";
     }
 
+    @PostMapping("/inspections/{procurementId}")
+    public String saveInspectionSupplement(@PathVariable long procurementId,
+            @RequestParam String supplement, HttpSession session, RedirectAttributes redirect) {
+        return execute(redirect, "/vendor/inspections/" + procurementId,
+                () -> vendorService.saveSupplement(procurementId, requiredVendorId(session), supplement),
+                "보완 결과를 등록했습니다.");
+    }
+
     @GetMapping("/returns")
     public String returns(HttpSession session, Model model) {
         model.addAttribute("returns", vendorService.returns(readScope(session)));
         model.addAttribute("canProcess", canProcess(session));
         return "vendor/returns";
+    }
+
+    @GetMapping("/returns/{procurementId}")
+    public String returnDetail(@PathVariable long procurementId, HttpSession session, Model model) {
+        model.addAttribute("returnItem", vendorService.order(procurementId, readScope(session)));
+        model.addAttribute("canProcess", canProcess(session));
+        return "vendor/return-detail";
+    }
+
+    @PostMapping("/returns/{procurementId}/supplement")
+    public String supplementReturn(@PathVariable long procurementId, @RequestParam String supplement,
+            HttpSession session, RedirectAttributes redirect) {
+        return execute(redirect, "/vendor/returns/" + procurementId,
+                () -> vendorService.saveSupplement(procurementId, requiredVendorId(session), supplement),
+                "보완 결과를 저장했습니다. 재출하를 진행해 주세요.");
     }
 
     @PostMapping("/returns/{procurementId}/reship")
@@ -164,6 +192,14 @@ public class VendorController {
         model.addAttribute("statement", vendorService.order(procurementId, readScope(session)));
         model.addAttribute("canProcess", canProcess(session));
         return "vendor/statement";
+    }
+
+    @PostMapping("/orders/{procurementId}/statement")
+    public String saveStatement(@PathVariable long procurementId, HttpSession session,
+            RedirectAttributes redirect) {
+        return execute(redirect, "/vendor/orders/" + procurementId + "/statement",
+                () -> vendorService.saveStatement(procurementId, requiredVendorId(session)),
+                "거래명세서를 등록했습니다.");
     }
 
     private Long readScope(HttpSession session) {

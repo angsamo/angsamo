@@ -7,6 +7,8 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import com.angsamo.erp.vendor.dto.VendorOrderItem;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -56,7 +58,32 @@ class VendorServiceTests {
 
     @Test
     void onlyInProgressOrderCanShip() {
-        when(vendorMapper.shipOrder(10L, 20L)).thenReturn(0);
-        assertThrows(IllegalStateException.class, () -> vendorService.shipOrder(10L, 20L));
+        LocalDate today = LocalDate.now();
+        VendorOrderItem order = new VendorOrderItem();
+        order.setOrderQty(new BigDecimal("10"));
+        order.setRequiredDate(today.plusDays(2));
+        when(vendorMapper.findOrder(10L, 20L)).thenReturn(order);
+        when(vendorMapper.shipOrder(10L, 20L, today)).thenReturn(0);
+        assertThrows(IllegalStateException.class,
+                () -> vendorService.shipOrder(10L, 20L, new BigDecimal("10"), today, today.plusDays(2)));
+    }
+
+    @Test
+    void shipmentQuantityMustMatchOrderQuantity() {
+        VendorOrderItem order = new VendorOrderItem();
+        order.setOrderQty(new BigDecimal("10"));
+        order.setRequiredDate(LocalDate.now().plusDays(2));
+        when(vendorMapper.findOrder(10L, 20L)).thenReturn(order);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> vendorService.shipOrder(10L, 20L, new BigDecimal("9"),
+                        LocalDate.now(), order.getRequiredDate()));
+    }
+
+    @Test
+    void supplementIsRequiredBeforeReship() {
+        when(vendorMapper.saveSupplement(10L, 20L, "재가공 완료")).thenReturn(1);
+        vendorService.saveSupplement(10L, 20L, "재가공 완료");
+        verify(vendorMapper).saveSupplement(10L, 20L, "재가공 완료");
     }
 }

@@ -167,10 +167,22 @@
     <!-- 제작 중인 선정 업체의 조달 건만 출하 완료로 변경한다. -->
     <update id="shipOrder">
         UPDATE procurement
-        SET status = 'SHIPPED', shipped_at = NOW()
+        SET status = 'SHIPPED', shipped_at = #{shipmentDate}, updated_at = NOW()
         WHERE procurement_id = #{procurementId}
           AND selected_vendor_id = #{vendorId}
           AND status = 'IN_PROGRESS'
+    </update>
+
+    <!-- 별도 보완 테이블 없이 기존 거래 조건에 이력을 보존하고 보완 진행 상태로 전환한다. -->
+    <update id="saveSupplement">
+        UPDATE procurement
+        SET terms = CONCAT(COALESCE(terms, ''),
+                           CASE WHEN COALESCE(terms, '') = '' THEN '' ELSE '\n' END,
+                           '[보완결과] ', #{supplement}),
+            status = 'RESUPPLYING', updated_at = NOW()
+        WHERE procurement_id = #{procurementId}
+          AND selected_vendor_id = #{vendorId}
+          AND status IN ('RETURNED', 'RETURN_REQUESTED')
     </update>
 
     <!-- 자재 검수에서 반품된 자기 업체 건만 보완 완료 후 재출하한다. -->
@@ -179,6 +191,16 @@
         SET status = 'SHIPPED', shipped_at = NOW()
         WHERE procurement_id = #{procurementId}
           AND selected_vendor_id = #{vendorId}
-          AND status IN ('RETURNED','RETURN_REQUESTED','RESUPPLYING')
+          AND status = 'RESUPPLYING'
+    </update>
+
+    <!-- 현재 DB에서는 거래명세 등록 여부를 procurement 상태로 관리한다. -->
+    <update id="saveStatement">
+        UPDATE procurement
+        SET status = 'STATEMENT_ISSUED', updated_at = NOW()
+        WHERE procurement_id = #{procurementId}
+          AND selected_vendor_id = #{vendorId}
+          AND status = 'RECEIVED'
+          AND COALESCE(received_qty, 0) &gt; 0
     </update>
 </mapper>

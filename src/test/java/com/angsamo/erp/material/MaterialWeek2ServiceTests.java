@@ -46,12 +46,12 @@ class MaterialWeek2ServiceTests {
     @Test
     void issueDecreasesInventoryThenRecordsMovementThenCompletesRequest() {
         when(mapper.lockIssue(10L)).thenReturn(issue("APPROVED", "10", "10"));
-        when(mapper.decreaseInventory(2L, 3L, new BigDecimal("10"))).thenReturn(1);
+        when(mapper.decreaseInventory(4L, 3L, new BigDecimal("10"))).thenReturn(1);
         when(mapper.updateIssue(10L, new BigDecimal("10"), "ISSUED", 7L)).thenReturn(1);
         service.processIssue(10L, new BigDecimal("10"), 7L);
         InOrder order = inOrder(mapper);
-        order.verify(mapper).decreaseInventory(2L, 3L, new BigDecimal("10"));
-        order.verify(mapper).insertStockMovement(2L, 3L, "OUT", new BigDecimal("10"), "MATERIAL_REQUEST", 10L, 7L, null);
+        order.verify(mapper).decreaseInventory(4L, 3L, new BigDecimal("10"));
+        order.verify(mapper).insertStockMovement(4L, 3L, "OUT", new BigDecimal("10"), "MATERIAL_REQUEST", 10L, 7L, null);
         order.verify(mapper).updateIssue(10L, new BigDecimal("10"), "ISSUED", 7L);
     }
 
@@ -66,7 +66,10 @@ class MaterialWeek2ServiceTests {
     private Map<String, Object> issue(String status, String available, String requested) {
         Map<String, Object> row = new HashMap<>();
         row.put("status", status); row.put("active", true); row.put("availableQty", new BigDecimal(available));
-        row.put("releaseQty", new BigDecimal(requested)); row.put("departmentId", 2L); row.put("itemId", 3L);
+        row.put("releaseQty", new BigDecimal(requested));
+        row.put("departmentId", 2L); // 생산 요청 부서
+        row.put("inventoryDepartmentId", 4L); // 연결 조달의 입고 재고 부서
+        row.put("itemId", 3L);
         return row;
     }
 
