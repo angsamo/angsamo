@@ -18,9 +18,13 @@ public class PurchaseReceivingItem {
     private String vendorName;
     private BigDecimal orderQty;
     private BigDecimal receivedQty;
+    private BigDecimal inventoryQty;
+    private BigDecimal movementQty;
     private String inspectionResult;
     private String status;
     private LocalDateTime shippedAt;
     private LocalDateTime receivedAt;
+    private LocalDateTime movementAt;
+    private Boolean inventoryApplied;
     private Boolean readyToClose;
 }

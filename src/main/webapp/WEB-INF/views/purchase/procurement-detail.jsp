@@ -13,6 +13,7 @@
           rel="stylesheet">
     <link rel="stylesheet"
           href="${pageContext.request.contextPath}/resources/css/common.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/purchase.css">
 </head>
 <body>
     <jsp:include page="/WEB-INF/views/common/sidebar.jsp" />
@@ -110,13 +111,13 @@
 				</section>
 
 				<c:if test="${not empty success}">
-				    <p class="flash success">
+				    <p class="purchase-flash success">
 				        <c:out value="${success}"/>
 				    </p>
 				</c:if>
 
 				<c:if test="${not empty error}">
-				    <p class="flash error">
+				    <p class="purchase-flash error">
 				        <c:out value="${error}"/>
 				    </p>
 				</c:if>
@@ -128,10 +129,18 @@
 				                <p class="eyebrow">QUOTE REQUEST</p>
 				                <h2>협력업체 견적 요청</h2>
 				            </div>
+				            <span class="list-count">마감 ${procurement.quoteDeadline}</span>
 				        </div>
 
-				        <form method="post"
+				        <form class="purchase-quote-request-form" method="post"
 				              action="${pageContext.request.contextPath}/purchase/procurements/${procurement.procurementId}/quotes">
+
+                            <div class="purchase-vendor-toolbar">
+                                <label><input id="selectAllVendors" type="checkbox"> 전체 선택</label>
+                                <span>비교 견적을 위해 서로 다른 업체를 두 곳 이상 선택하세요.</span>
+                            </div>
+
+                            <div class="purchase-vendor-grid">
 
 				            <c:forEach var="vendor" items="${vendors}">
 				                <label class="vendor-check">
@@ -139,20 +148,21 @@
 				                           name="vendorIds"
 				                           value="${vendor.vendorId}">
 
-				                    <span>
-				                        <c:out value="${vendor.vendorCode}"/>
-				                        -
-				                        <c:out value="${vendor.vendorName}"/>
+				                    <span class="purchase-vendor-info">
+				                        <strong><c:out value="${vendor.vendorCode}"/> · <c:out value="${vendor.vendorName}"/></strong>
+				                        <small><c:out value="${vendor.contactName}" default="담당자 미등록"/> · <c:out value="${vendor.email}" default="이메일 미등록"/></small>
 				                    </span>
 				                </label>
 				            </c:forEach>
+                            </div>
 
 				            <c:if test="${empty vendors}">
 				                <p>거래 중인 협력업체가 없습니다.</p>
 				            </c:if>
 
 				            <c:if test="${not empty vendors}">
-				                <button class="action-button" type="submit">
+				                <button class="purchase-action-button" type="submit"
+                                    onclick="return confirm('선택한 협력업체에 견적 요청을 보내시겠습니까?');">
 				                    선택 업체에 견적 요청
 				                </button>
 				            </c:if>
@@ -212,12 +222,16 @@
                                    min="0.001"
                                    step="0.001"
                                    value="${procurement.orderQty}"
+                                   readonly
                                    required>
+                            <small>조달 필요수량 전체를 발주합니다.</small>
                             <label for="orderRequiredDate">요구 납기일</label>
                             <input id="orderRequiredDate"
                                    type="date"
                                    name="requiredDate"
                                    value="${procurement.requiredDate}"
+                                   min="${today}"
+                                   max="${procurement.requiredDate}"
                                    required>
                             <button class="action-button" type="submit">발주 전달</button>
                         </form>
@@ -326,5 +340,18 @@
     </div>
 
     <script src="${pageContext.request.contextPath}/resources/js/common.js"></script>
+    <script>
+        const selectAllVendors = document.getElementById('selectAllVendors');
+        if (selectAllVendors) {
+            const vendorChecks = [...document.querySelectorAll('input[name="vendorIds"]')];
+            selectAllVendors.addEventListener('change', () => {
+                vendorChecks.forEach(input => input.checked = selectAllVendors.checked);
+            });
+            vendorChecks.forEach(input => input.addEventListener('change', () => {
+                selectAllVendors.checked = vendorChecks.length > 0 && vendorChecks.every(item => item.checked);
+                selectAllVendors.indeterminate = vendorChecks.some(item => item.checked) && !selectAllVendors.checked;
+            }));
+        }
+    </script>
 </body>
 </html>

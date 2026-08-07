@@ -23,6 +23,7 @@ public class ShortageMaterialRequestItem {
     private String unit;
     private BigDecimal requestQty;
     private BigDecimal issuedQty;
+    private BigDecimal currentQty;
     private BigDecimal shortageQty;
     private LocalDate requiredDate;
     private String status;

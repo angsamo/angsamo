@@ -13,6 +13,7 @@
           rel="stylesheet">
     <link rel="stylesheet"
           href="${pageContext.request.contextPath}/resources/css/common.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/purchase.css">
 </head>
 <body>
     <jsp:include page="/WEB-INF/views/common/sidebar.jsp" />
@@ -30,13 +31,13 @@
             </section>
 			
 			<c:if test="${not empty success}">
-			    <p class="flash success">
+			    <p class="purchase-flash success">
 			        <c:out value="${success}"/>
 			    </p>
 			</c:if>
 
 			<c:if test="${not empty error}">
-			    <p class="flash error">
+			    <p class="purchase-flash error">
 			        <c:out value="${error}"/>
 			    </p>
 			</c:if>
@@ -61,8 +62,10 @@
                                 <th>품목명</th>
                                 <th>요청수량</th>
                                 <th>불출수량</th>
+                                <th>현재고</th>
                                 <th>부족수량</th>
                                 <th>필요일</th>
+                                <th>요청일</th>
                                 <th>요청자</th>
                                 <th>상태</th>
 								<th>조달업무</th>
@@ -76,23 +79,28 @@
                                     <td><c:out value="${shortage.departmentName}" /></td>
                                     <td><c:out value="${shortage.itemCode}" /></td>
                                     <td><c:out value="${shortage.itemName}" /></td>
-                                    <td>
+                                    <td class="purchase-number">
                                         <c:out value="${shortage.requestQty}" />
                                         <c:out value="${shortage.unit}" />
                                     </td>
-                                    <td>
+                                    <td class="purchase-number">
                                         <c:out value="${shortage.issuedQty}" />
                                         <c:out value="${shortage.unit}" />
                                     </td>
-                                    <td>
+                                    <td class="purchase-number">
+                                        <c:out value="${shortage.currentQty}" />
+                                        <c:out value="${shortage.unit}" />
+                                    </td>
+                                    <td class="purchase-number purchase-shortage-qty">
                                         <c:out value="${shortage.shortageQty}" />
                                         <c:out value="${shortage.unit}" />
                                     </td>
                                     <td><c:out value="${shortage.requiredDate}" /></td>
+                                    <td><c:out value="${shortage.createdAt}" /></td>
                                     <td><c:out value="${shortage.requestedByName}" /></td>
-                                    <td><span class="state-badge disabled"><c:out value="${shortage.status}" /></span></td>
+                                    <td><span class="state-badge purchase-status returned">재고 부족</span></td>
 									<td>
-									    <a class="action-button"
+									    <a class="purchase-action-button"
 									       href="${pageContext.request.contextPath}/purchase/shortages/${shortage.requestId}/procurement">
 									        생성
 									    </a>
@@ -102,8 +110,8 @@
 							
 							<c:if test="${empty shortages}">
 							    <tr>
-							        <td class="empty-cell" colspan="12">
-							            부족 처리된 자재요청이 없습니다.
+						        <td class="empty-cell" colspan="14">
+						            자재부서에서 재고 부족으로 확인된 요청이 없습니다.
 							        </td>
 							    </tr>
 							</c:if>

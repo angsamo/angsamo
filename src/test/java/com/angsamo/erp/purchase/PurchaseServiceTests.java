@@ -110,6 +110,36 @@ class PurchaseServiceTests {
     }
 
     @Test
+    void shortageRequestsAreLoadedFromPurchaseMapper() {
+        ShortageMaterialRequestItem shortage =
+                createShortage(10L, LocalDate.now().plusDays(5));
+        shortage.setCurrentQty(new BigDecimal("2.000"));
+
+        when(purchaseMapper.findShortageMaterialRequests())
+                .thenReturn(List.of(shortage));
+
+        List<ShortageMaterialRequestItem> result =
+                purchaseService.getShortageMaterialRequests();
+
+        assertEquals(1, result.size());
+        assertEquals("SHORTAGE", result.get(0).getStatus());
+        assertEquals(new BigDecimal("2.000"), result.get(0).getCurrentQty());
+    }
+
+    @Test
+    void shortageRequestCanBeReviewedBeforeProcurementCreation() {
+        ShortageMaterialRequestItem shortage =
+                createShortage(10L, LocalDate.now().plusDays(5));
+        when(purchaseMapper.findShortageById(10L)).thenReturn(shortage);
+
+        ShortageMaterialRequestItem result =
+                purchaseService.getShortageMaterialRequest(10L);
+
+        assertEquals(10L, result.getRequestId());
+        assertEquals("SHORTAGE", result.getStatus());
+    }
+
+    @Test
     void duplicateProcurementIsRejected() {
         ProcurementCreateForm form = new ProcurementCreateForm();
         form.setMaterialRequestId(10L);
@@ -225,6 +255,7 @@ class PurchaseServiceTests {
         procurement.setProcurementId(20L);
         procurement.setDepartmentId(4L);
         procurement.setStatus("REQUESTED");
+        procurement.setQuoteDeadline(LocalDate.now().plusDays(2));
 
         QuoteRequestForm form = new QuoteRequestForm();
         form.setVendorIds(List.of(1L, 1L, 2L));
@@ -267,6 +298,106 @@ class PurchaseServiceTests {
     }
 
     @Test
+    void otherDepartmentCannotRequestProcurementQuotes() {
+        ProcurementDetail procurement = new ProcurementDetail();
+        procurement.setProcurementId(20L);
+        procurement.setDepartmentId(99L);
+        procurement.setStatus("REQUESTED");
+        procurement.setQuoteDeadline(LocalDate.now().plusDays(2));
+        QuoteRequestForm form = new QuoteRequestForm();
+        form.setVendorIds(List.of(1L, 2L));
+        when(purchaseMapper.findProcurementById(20L)).thenReturn(procurement);
+
+        SecurityException exception = assertThrows(
+                SecurityException.class,
+                () -> purchaseService.requestQuotes(20L, form, 4L, false));
+
+        assertEquals(
+                "다른 부서의 조달업무에는 견적을 요청할 수 없습니다.",
+                exception.getMessage());
+        verify(purchaseMapper, never()).insertVendorQuote(anyLong(), anyLong());
+    }
+
+    @Test
+    void administratorCanRequestQuotesAcrossDepartments() {
+        ProcurementDetail procurement = new ProcurementDetail();
+        procurement.setProcurementId(20L);
+        procurement.setDepartmentId(99L);
+        procurement.setStatus("REQUESTED");
+        procurement.setQuoteDeadline(LocalDate.now().plusDays(2));
+        QuoteRequestForm form = new QuoteRequestForm();
+        form.setVendorIds(List.of(1L, 2L));
+        when(purchaseMapper.findProcurementById(20L)).thenReturn(procurement);
+        when(purchaseMapper.insertVendorQuote(20L, 1L)).thenReturn(1);
+        when(purchaseMapper.insertVendorQuote(20L, 2L)).thenReturn(1);
+        when(purchaseMapper.updateProcurementToQuoting(20L, null, true)).thenReturn(1);
+
+        purchaseService.requestQuotes(20L, form, null, true);
+
+        verify(purchaseMapper).updateProcurementToQuoting(20L, null, true);
+    }
+
+    @Test
+    void inactiveOrMissingVendorCannotReceiveQuoteRequest() {
+        ProcurementDetail procurement = new ProcurementDetail();
+        procurement.setProcurementId(20L);
+        procurement.setDepartmentId(4L);
+        procurement.setStatus("REQUESTED");
+        procurement.setQuoteDeadline(LocalDate.now().plusDays(2));
+        QuoteRequestForm form = new QuoteRequestForm();
+        form.setVendorIds(List.of(1L, 999L));
+        when(purchaseMapper.findProcurementById(20L)).thenReturn(procurement);
+        when(purchaseMapper.insertVendorQuote(20L, 1L)).thenReturn(1);
+        when(purchaseMapper.insertVendorQuote(20L, 999L)).thenReturn(0);
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> purchaseService.requestQuotes(20L, form, 4L, false));
+
+        assertEquals(
+                "거래 중지 업체이거나 이미 견적을 요청한 업체입니다.",
+                exception.getMessage());
+    }
+
+    @Test
+    void oneVendorCannotReceiveAComparisonQuoteRequest() {
+        ProcurementDetail procurement = new ProcurementDetail();
+        procurement.setDepartmentId(4L);
+        procurement.setStatus("REQUESTED");
+        procurement.setQuoteDeadline(LocalDate.now().plusDays(2));
+        QuoteRequestForm form = new QuoteRequestForm();
+        form.setVendorIds(List.of(1L, 1L));
+        when(purchaseMapper.findProcurementById(20L)).thenReturn(procurement);
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> purchaseService.requestQuotes(20L, form, 4L, false));
+
+        assertEquals(
+                "비교 견적을 위해 서로 다른 협력업체를 두 곳 이상 선택하세요.",
+                exception.getMessage());
+        verify(purchaseMapper, never()).insertVendorQuote(anyLong(), anyLong());
+    }
+
+    @Test
+    void expiredProcurementCannotRequestQuotes() {
+        ProcurementDetail procurement = new ProcurementDetail();
+        procurement.setDepartmentId(4L);
+        procurement.setStatus("REQUESTED");
+        procurement.setQuoteDeadline(LocalDate.now().minusDays(1));
+        QuoteRequestForm form = new QuoteRequestForm();
+        form.setVendorIds(List.of(1L, 2L));
+        when(purchaseMapper.findProcurementById(20L)).thenReturn(procurement);
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> purchaseService.requestQuotes(20L, form, 4L, false));
+
+        assertEquals("견적 마감일이 지나 견적을 요청할 수 없습니다.", exception.getMessage());
+        verify(purchaseMapper, never()).insertVendorQuote(anyLong(), anyLong());
+    }
+
+    @Test
     void unavailableQuoteCannotBeSelected() {
         when(purchaseMapper.selectProcurementQuote(20L, 30L, 4L, false))
                 .thenReturn(0);
@@ -276,6 +407,18 @@ class PurchaseServiceTests {
 
         verify(purchaseMapper, never()).markQuoteSelected(anyLong(), anyLong());
         verify(purchaseMapper, never()).rejectOtherQuotes(anyLong(), anyLong());
+    }
+
+    @Test
+    void quoteSelectionRequiresBothProcurementAndQuoteIds() {
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> purchaseService.selectQuote(null, 30L, 4L, false));
+
+        assertEquals("선정할 견적을 확인하세요.", exception.getMessage());
+        verify(purchaseMapper, never()).selectProcurementQuote(
+                anyLong(), anyLong(), anyLong(),
+                org.mockito.ArgumentMatchers.anyBoolean());
     }
 
     @Test
@@ -305,6 +448,9 @@ class PurchaseServiceTests {
     void contractedProcurementCanBeOrdered() {
         BigDecimal orderQty = new BigDecimal("8.000");
         LocalDate requiredDate = LocalDate.now().plusDays(7);
+        ProcurementDetail procurement = contractedProcurement(orderQty, requiredDate);
+
+        when(purchaseMapper.findProcurementById(20L)).thenReturn(procurement);
 
         when(purchaseMapper.issuePurchaseOrder(
                 20L, orderQty, requiredDate, 4L, false))
@@ -326,6 +472,38 @@ class PurchaseServiceTests {
         verify(purchaseMapper, never()).issuePurchaseOrder(
                 anyLong(), any(), any(), anyLong(),
                 org.mockito.ArgumentMatchers.anyBoolean());
+    }
+
+    @Test
+    void purchaseOrderQuantityMustMatchProcurementRequirement() {
+        LocalDate requiredDate = LocalDate.now().plusDays(7);
+        when(purchaseMapper.findProcurementById(20L))
+                .thenReturn(contractedProcurement(new BigDecimal("8.000"), requiredDate));
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> purchaseService.issuePurchaseOrder(
+                        20L, new BigDecimal("7.000"), requiredDate, 4L, false));
+
+        assertEquals("발주 수량은 조달 필요수량과 같아야 합니다.", exception.getMessage());
+        verify(purchaseMapper, never()).issuePurchaseOrder(
+                anyLong(), any(), any(), anyLong(),
+                org.mockito.ArgumentMatchers.anyBoolean());
+    }
+
+    @Test
+    void purchaseOrderDueDateCannotExceedMaterialRequiredDate() {
+        LocalDate requiredDate = LocalDate.now().plusDays(7);
+        BigDecimal quantity = new BigDecimal("8.000");
+        when(purchaseMapper.findProcurementById(20L))
+                .thenReturn(contractedProcurement(quantity, requiredDate));
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> purchaseService.issuePurchaseOrder(
+                        20L, quantity, requiredDate.plusDays(1), 4L, false));
+
+        assertEquals("요구 납기일은 자재 필요일보다 늦을 수 없습니다.", exception.getMessage());
     }
 
     @Test
@@ -363,5 +541,22 @@ class PurchaseServiceTests {
         shortage.setStatus("SHORTAGE");
 
         return shortage;
+    }
+
+    @Test
+    void receivingFiltersAreNormalizedBeforeQuery() {
+        purchaseService.getPurchaseReceivings("  MAT-001  ", "  RECEIVED  ");
+
+        verify(purchaseMapper).findPurchaseReceivings("MAT-001", "RECEIVED");
+    }
+
+    private ProcurementDetail contractedProcurement(
+            BigDecimal requestQty, LocalDate requiredDate) {
+        ProcurementDetail procurement = new ProcurementDetail();
+        procurement.setProcurementId(20L);
+        procurement.setStatus("CONTRACTED");
+        procurement.setRequestQty(requestQty);
+        procurement.setRequiredDate(requiredDate);
+        return procurement;
     }
 }

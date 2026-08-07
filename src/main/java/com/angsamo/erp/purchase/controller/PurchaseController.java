@@ -56,9 +56,14 @@ public class PurchaseController {
     }
 
     @GetMapping("/purchase/vendors")
-    public String vendorList(Model model, HttpSession session) {
+    public String vendorList(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Boolean active,
+            Model model, HttpSession session) {
         requirePurchase(session);
-        model.addAttribute("vendors", purchaseService.getVendors());
+        model.addAttribute("vendors", purchaseService.getVendors(keyword, active));
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("active", active);
         return "purchase/list";
     }
 
@@ -219,10 +224,21 @@ public class PurchaseController {
 
         requirePurchase(session);
 
-        ProcurementCreateForm form = new ProcurementCreateForm();
+        var shortage = purchaseService.getShortageMaterialRequest(requestId);
+        if (shortage == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "재고 부족 요청을 찾을 수 없거나 이미 조달업무가 생성됐습니다.");
+        }
+
+        ProcurementCreateForm form = model.containsAttribute("procurementForm")
+                ? (ProcurementCreateForm) model.asMap().get("procurementForm")
+                : new ProcurementCreateForm();
         form.setMaterialRequestId(requestId);
 
         model.addAttribute("procurementForm", form);
+        model.addAttribute("shortage", shortage);
+        model.addAttribute("today", LocalDate.now());
         return "purchase/procurement-form";
     }
 
@@ -237,6 +253,7 @@ public class PurchaseController {
 
         if (bindingResult.hasErrors()) {
             redirect.addFlashAttribute("error", "입력값을 확인하세요.");
+            redirect.addFlashAttribute("procurementForm", procurementForm);
             return "redirect:/purchase/shortages/"
                     + procurementForm.getMaterialRequestId()
                     + "/procurement";
@@ -322,10 +339,15 @@ public class PurchaseController {
     }
     
     @GetMapping("/purchase/procurements")
-    public String procurementList(Model model, HttpSession session) {
+    public String procurementList(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String status,
+            Model model, HttpSession session) {
         requirePurchase(session);
         model.addAttribute(
-                "procurements", purchaseService.getProcurements());
+                "procurements", purchaseService.getProcurements(keyword, status));
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("status", status);
         return "purchase/procurements";
     }
 
@@ -348,6 +370,7 @@ public class PurchaseController {
         model.addAttribute("procurement", procurement);
         model.addAttribute("vendors", purchaseService.getActiveVendors());
         model.addAttribute("quoteForm", new QuoteRequestForm());
+        model.addAttribute("today", LocalDate.now());
 
         return "purchase/procurement-detail";
     }
@@ -364,7 +387,7 @@ public class PurchaseController {
 
         if (bindingResult.hasErrors()) {
             redirect.addFlashAttribute(
-                    "error", "협력업체를 한 곳 이상 선택하세요.");
+                    "error", "비교 견적을 위해 협력업체를 두 곳 이상 선택하세요.");
             return "redirect:/purchase/procurements/" + procurementId;
         }
 
@@ -406,9 +429,14 @@ public class PurchaseController {
     }
 
     @GetMapping("/purchase/quotes")
-    public String quoteList(Model model, HttpSession session) {
+    public String quoteList(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String status,
+            Model model, HttpSession session) {
         requirePurchase(session);
-        model.addAttribute("quotes", purchaseService.getVendorQuotes());
+        model.addAttribute("quotes", purchaseService.getVendorQuotes(keyword, status));
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("status", status);
         return "purchase/quotes";
     }
 
@@ -420,11 +448,16 @@ public class PurchaseController {
     }
 
     @GetMapping("/purchase/receivings")
-    public String purchaseReceivings(Model model, HttpSession session) {
+    public String purchaseReceivings(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String status,
+            Model model, HttpSession session) {
         requirePurchase(session);
         model.addAttribute(
                 "receivings",
-                purchaseService.getPurchaseReceivings());
+                purchaseService.getPurchaseReceivings(keyword, status));
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("status", status);
         return "purchase/receivings";
     }
 
