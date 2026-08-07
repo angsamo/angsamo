@@ -31,6 +31,7 @@ public class ProcurementListItem {
     private BigDecimal unitPrice;
     private BigDecimal receivedQty;
     private String status;
+    private LocalDateTime orderedAt;
     private Long createdBy;
     private String createdByName;
     private LocalDateTime createdAt;

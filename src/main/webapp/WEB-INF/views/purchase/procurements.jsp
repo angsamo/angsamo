@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
 <!DOCTYPE html>
 <html lang="ko">
@@ -13,6 +14,7 @@
           rel="stylesheet">
     <link rel="stylesheet"
           href="${pageContext.request.contextPath}/resources/css/common.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/purchase.css">
 </head>
 <body>
     <jsp:include page="/WEB-INF/views/common/sidebar.jsp" />
@@ -30,16 +32,27 @@
             </section>
 			
 			<c:if test="${not empty success}">
-							    <p class="flash success">
+								    <p class="purchase-flash success">
 							        <c:out value="${success}"/>
 							    </p>
 							</c:if>
 
 							<c:if test="${not empty error}">
-							    <p class="flash error">
+								    <p class="purchase-flash error">
 							        <c:out value="${error}"/>
 							    </p>
 							</c:if>
+            <form class="panel purchase-filter-form" method="get">
+                <input class="table-search" type="search" name="keyword" value="<c:out value='${keyword}'/>" placeholder="조달번호, 품목, 선정업체 검색">
+                <select name="status" aria-label="조달 상태">
+                    <option value="">전체 상태</option>
+                    <c:forEach var="option" items="REQUESTED,QUOTING,SELECTED,CONTRACTED,ORDERED,IN_PROGRESS,SHIPPED,RECEIVED,RETURNED,CLOSED,CANCELLED">
+                        <option value="${option}" ${status == option ? 'selected' : ''}>${option}</option>
+                    </c:forEach>
+                </select>
+                <button class="purchase-action-button" type="submit">검색</button>
+                <a class="purchase-action-button secondary" href="${pageContext.request.contextPath}/purchase/procurements">초기화</a>
+            </form>
 
             <section class="panel table-panel">
                 <div class="panel-header">
@@ -106,7 +119,7 @@
                                         <c:out value="${procurement.receivedQty}" />
                                         <c:out value="${procurement.unit}" />
                                     </td>
-                                    <td><span class="state-badge enabled"><c:out value="${procurement.status}" /></span></td>
+                                    <td><span class="state-badge purchase-status ${fn:toLowerCase(procurement.status)}"><c:out value="${procurement.status}" /></span></td>
                                     <td><c:out value="${procurement.createdByName}" /></td>
                                     <td><c:out value="${procurement.createdAt}" /></td>
                                 </tr>

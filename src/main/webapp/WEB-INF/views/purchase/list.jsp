@@ -18,6 +18,7 @@
 
     <link rel="stylesheet"
           href="${pageContext.request.contextPath}/resources/css/common.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/purchase.css">
 </head>
 
 <body>
@@ -41,17 +42,27 @@
             </section>
 			
 			<c:if test="${not empty success}">
-			    <p class="flash success">
+			    <p class="purchase-flash success">
 			        <c:out value="${success}"/>
 			    </p>
 			</c:if>
 
 			<c:if test="${not empty error}">
-			    <p class="flash error">
+			    <p class="purchase-flash error">
 			        <c:out value="${error}"/>
 			    </p>
 			</c:if>
-			
+            <form class="panel purchase-filter-form" method="get">
+                <input class="table-search" type="search" name="keyword" value="<c:out value='${keyword}'/>" placeholder="업체 코드, 업체명, 담당자 검색">
+                <select name="active" aria-label="거래 상태">
+                    <option value="" ${empty active ? 'selected' : ''}>전체 상태</option>
+                    <option value="true" ${active == true ? 'selected' : ''}>거래 중</option>
+                    <option value="false" ${active == false ? 'selected' : ''}>거래 중지</option>
+                </select>
+                <button class="purchase-action-button" type="submit">검색</button>
+                <a class="purchase-action-button secondary" href="${pageContext.request.contextPath}/purchase/vendors">초기화</a>
+            </form>
+
             <section class="panel table-panel">
                 <div class="panel-header">
                     <div>

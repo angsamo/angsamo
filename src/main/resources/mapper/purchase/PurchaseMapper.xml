@@ -17,7 +17,54 @@
             active,
             created_at AS createdAt
         FROM vendor
+        <where>
+            <if test="keyword != null">
+                AND (vendor_code LIKE CONCAT('%', #{keyword}, '%')
+                    OR vendor_name LIKE CONCAT('%', #{keyword}, '%')
+                    OR contact_name LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="active != null">
+                AND active = #{active}
+            </if>
+        </where>
         ORDER BY vendor_id
+    </select>
+
+    <select id="findShortageById"
+            resultType="com.angsamo.erp.purchase.dto.ShortageMaterialRequestItem">
+        SELECT
+            mr.request_id AS requestId,
+            mr.production_plan_id AS productionPlanId,
+            mr.department_id AS departmentId,
+            d.department_name AS departmentName,
+            mr.item_id AS itemId,
+            i.item_code AS itemCode,
+            i.item_name AS itemName,
+            i.unit,
+            mr.request_qty AS requestQty,
+            mr.issued_qty AS issuedQty,
+            COALESCE(inv.current_qty, 0) AS currentQty,
+            GREATEST(mr.request_qty - mr.issued_qty - COALESCE(inv.current_qty, 0), 0) AS shortageQty,
+            mr.required_date AS requiredDate,
+            mr.status,
+            mr.requested_by AS requestedBy,
+            u.user_name AS requestedByName,
+            mr.created_at AS createdAt
+        FROM material_request mr
+        INNER JOIN item i ON i.item_id = mr.item_id
+        INNER JOIN department d ON d.department_id = mr.department_id
+        INNER JOIN app_user u ON u.user_id = mr.requested_by
+        LEFT JOIN inventory inv
+          ON inv.item_id = mr.item_id
+         AND inv.department_id = mr.department_id
+        WHERE mr.request_id = #{requestId}
+          AND mr.status = 'SHORTAGE'
+          AND GREATEST(mr.request_qty - mr.issued_qty - COALESCE(inv.current_qty, 0), 0) &gt; 0
+          AND NOT EXISTS (
+              SELECT 1 FROM procurement p
+              WHERE p.material_request_id = mr.request_id
+                AND p.status != 'CANCELLED'
+          )
     </select>
 
     <select id="findVendorById"
@@ -64,6 +111,7 @@
 		i.unit,
 		mr.request_qty AS requestQty,
 		mr.issued_qty AS issuedQty,
+		COALESCE(inv.current_qty, 0) AS currentQty,
 		GREATEST(
 			mr.request_qty - mr.issued_qty - COALESCE(inv.current_qty, 0),
 			0
@@ -80,7 +128,7 @@
 		LEFT JOIN inventory inv
 		  ON inv.item_id = mr.item_id
 		 AND inv.department_id = mr.department_id
-		WHERE mr.status IN ('REQUESTED', 'PARTIAL')
+		WHERE mr.status = 'SHORTAGE'
 		AND GREATEST(
 			mr.request_qty - mr.issued_qty - COALESCE(inv.current_qty, 0),
 			0
@@ -115,6 +163,7 @@
 		p.unit_price AS unitPrice,
 		p.received_qty AS receivedQty,
 		p.status,
+		p.ordered_at AS orderedAt,
 		p.created_by AS createdBy,
 		u.user_name AS createdByName,
 		p.created_at AS createdAt
@@ -124,6 +173,17 @@
 		INNER JOIN item i ON i.item_id = p.item_id
 		INNER JOIN app_user u ON u.user_id = p.created_by
 		LEFT JOIN vendor v ON v.vendor_id = p.selected_vendor_id
+		<where>
+			<if test="keyword != null">
+				AND (CAST(p.procurement_id AS CHAR) LIKE CONCAT('%', #{keyword}, '%')
+					OR i.item_code LIKE CONCAT('%', #{keyword}, '%')
+					OR i.item_name LIKE CONCAT('%', #{keyword}, '%')
+					OR v.vendor_name LIKE CONCAT('%', #{keyword}, '%'))
+			</if>
+			<if test="status != null">
+				AND p.status = #{status}
+			</if>
+		</where>
 		ORDER BY p.created_at DESC, p.procurement_id DESC
     </select>
 
@@ -198,7 +258,10 @@
             v.vendor_name AS vendorName,
             q.status,
             q.unit_price AS unitPrice,
+            q.unit_price * p.request_qty AS totalPrice,
             q.delivery_date AS deliveryDate,
+            p.required_date AS requiredDate,
+            p.quote_deadline AS quoteDeadline,
             q.terms,
             q.submitted_at AS submittedAt,
             q.created_at AS createdAt,
@@ -207,7 +270,29 @@
         INNER JOIN procurement p ON p.procurement_id = q.procurement_id
         INNER JOIN item i ON i.item_id = p.item_id
         INNER JOIN vendor v ON v.vendor_id = q.vendor_id
-        ORDER BY q.created_at DESC, q.quote_id DESC
+        <where>
+            <if test="keyword != null">
+                AND (CAST(q.quote_id AS CHAR) LIKE CONCAT('%', #{keyword}, '%')
+                    OR CAST(q.procurement_id AS CHAR) LIKE CONCAT('%', #{keyword}, '%')
+                    OR i.item_code LIKE CONCAT('%', #{keyword}, '%')
+                    OR i.item_name LIKE CONCAT('%', #{keyword}, '%')
+                    OR v.vendor_code LIKE CONCAT('%', #{keyword}, '%')
+                    OR v.vendor_name LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="status != null">
+                AND q.status = #{status}
+            </if>
+        </where>
+        ORDER BY q.procurement_id DESC,
+                 CASE q.status
+                     WHEN 'SUBMITTED' THEN 0
+                     WHEN 'SELECTED' THEN 1
+                     WHEN 'REQUESTED' THEN 2
+                     ELSE 3
+                 END,
+                 q.unit_price IS NULL,
+                 q.unit_price,
+                 q.quote_id
     </select>
 
     <update id="selectProcurementQuote">
@@ -215,6 +300,9 @@
         INNER JOIN vendor_quote q
                 ON q.procurement_id = p.procurement_id
                AND q.quote_id = #{quoteId}
+        INNER JOIN vendor v
+                ON v.vendor_id = q.vendor_id
+               AND v.active = 1
         SET
             p.selected_vendor_id = q.vendor_id,
             p.order_qty = p.request_qty,
@@ -248,33 +336,40 @@
     </update>
 
     <update id="confirmContract">
-        UPDATE procurement
+        UPDATE procurement p
+        INNER JOIN vendor v
+                ON v.vendor_id = p.selected_vendor_id
+               AND v.active = 1
         SET
-            terms = #{terms},
-            status = 'CONTRACTED'
-        WHERE procurement_id = #{procurementId}
-          AND status = 'SELECTED'
-          AND selected_vendor_id IS NOT NULL
-          AND unit_price IS NOT NULL
+            p.terms = #{terms},
+            p.status = 'CONTRACTED'
+        WHERE p.procurement_id = #{procurementId}
+          AND p.status = 'SELECTED'
+          AND p.selected_vendor_id IS NOT NULL
+          AND p.unit_price IS NOT NULL
         <if test="!admin">
-            AND department_id = #{departmentId}
+            AND p.department_id = #{departmentId}
         </if>
     </update>
 
     <update id="issuePurchaseOrder">
-        UPDATE procurement
+        UPDATE procurement p
+        INNER JOIN vendor v
+                ON v.vendor_id = p.selected_vendor_id
+               AND v.active = 1
         SET
-            order_qty = #{orderQty},
-            required_date = #{requiredDate},
-            status = 'ORDERED',
-            ordered_at = NOW()
-        WHERE procurement_id = #{procurementId}
-          AND status = 'CONTRACTED'
-          AND selected_vendor_id IS NOT NULL
-          AND unit_price IS NOT NULL
-          AND terms IS NOT NULL
+            p.order_qty = #{orderQty},
+            p.required_date = #{requiredDate},
+            p.status = 'ORDERED',
+            p.ordered_at = NOW()
+        WHERE p.procurement_id = #{procurementId}
+          AND p.status = 'CONTRACTED'
+          AND p.selected_vendor_id IS NOT NULL
+          AND p.unit_price IS NOT NULL
+          AND p.terms IS NOT NULL
+          AND #{orderQty} = p.request_qty
         <if test="!admin">
-            AND department_id = #{departmentId}
+            AND p.department_id = #{departmentId}
         </if>
     </update>
 
@@ -349,24 +444,72 @@
             v.vendor_name AS vendorName,
             p.order_qty AS orderQty,
             p.received_qty AS receivedQty,
+            COALESCE(inv.current_qty, 0) AS inventoryQty,
+            COALESCE((
+                SELECT SUM(sm.quantity)
+                FROM stock_movement sm
+                WHERE sm.reference_type = 'PROCUREMENT'
+                  AND sm.reference_id = p.procurement_id
+                  AND sm.movement_type = 'IN'
+            ), 0) AS movementQty,
             p.inspection_result AS inspectionResult,
             p.status,
             p.shipped_at AS shippedAt,
             p.received_at AS receivedAt,
+            (
+                SELECT MAX(sm.created_at)
+                FROM stock_movement sm
+                WHERE sm.reference_type = 'PROCUREMENT'
+                  AND sm.reference_id = p.procurement_id
+                  AND sm.movement_type = 'IN'
+            ) AS movementAt,
+            CASE
+                WHEN inv.item_id IS NOT NULL
+                 AND COALESCE((
+                     SELECT SUM(sm.quantity)
+                     FROM stock_movement sm
+                     WHERE sm.reference_type = 'PROCUREMENT'
+                       AND sm.reference_id = p.procurement_id
+                       AND sm.movement_type = 'IN'
+                 ), 0) &gt;= COALESCE(p.received_qty, 0)
+                 AND COALESCE(p.received_qty, 0) &gt; 0
+                THEN TRUE ELSE FALSE
+            END AS inventoryApplied,
             CASE
                 WHEN p.status = 'RECEIVED'
                  AND p.inspection_result = 'ACCEPTED'
                  AND COALESCE(p.received_qty, 0) &gt;= p.order_qty
+                 AND inv.item_id IS NOT NULL
+                 AND COALESCE((
+                     SELECT SUM(sm.quantity)
+                     FROM stock_movement sm
+                     WHERE sm.reference_type = 'PROCUREMENT'
+                       AND sm.reference_id = p.procurement_id
+                       AND sm.movement_type = 'IN'
+                 ), 0) &gt;= p.received_qty
                 THEN TRUE ELSE FALSE
             END AS readyToClose
         FROM procurement p
         INNER JOIN item i ON i.item_id = p.item_id
         INNER JOIN vendor v ON v.vendor_id = p.selected_vendor_id
-        WHERE p.status IN (
-            'SHIPPED', 'RECEIVED', 'RETURNED',
-            'RETURN_REQUESTED', 'RESUPPLYING', 'CLOSED'
-        )
-           OR p.received_at IS NOT NULL
+        LEFT JOIN inventory inv
+          ON inv.department_id = p.department_id
+         AND inv.item_id = p.item_id
+        <where>
+            AND (p.status IN (
+                'SHIPPED', 'RECEIVED', 'RETURNED',
+                'RETURN_REQUESTED', 'RESUPPLYING', 'CLOSED'
+            ) OR p.received_at IS NOT NULL)
+            <if test="keyword != null">
+                AND (CAST(p.procurement_id AS CHAR) LIKE CONCAT('%', #{keyword}, '%')
+                    OR i.item_code LIKE CONCAT('%', #{keyword}, '%')
+                    OR i.item_name LIKE CONCAT('%', #{keyword}, '%')
+                    OR v.vendor_name LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="status != null">
+                AND p.status = #{status}
+            </if>
+        </where>
         ORDER BY COALESCE(p.received_at, p.shipped_at) DESC,
                  p.procurement_id DESC
     </select>
@@ -379,6 +522,19 @@
           AND inspection_result = 'ACCEPTED'
           AND received_at IS NOT NULL
           AND COALESCE(received_qty, 0) &gt;= order_qty
+          AND EXISTS (
+              SELECT 1
+              FROM inventory inv
+              WHERE inv.department_id = procurement.department_id
+                AND inv.item_id = procurement.item_id
+          )
+          AND COALESCE((
+              SELECT SUM(sm.quantity)
+              FROM stock_movement sm
+              WHERE sm.reference_type = 'PROCUREMENT'
+                AND sm.reference_id = procurement.procurement_id
+                AND sm.movement_type = 'IN'
+          ), 0) &gt;= received_qty
         <if test="!admin">
             AND department_id = #{departmentId}
         </if>
@@ -462,6 +618,7 @@
             i.unit,
             mr.request_qty AS requestQty,
             mr.issued_qty AS issuedQty,
+            COALESCE(inv.current_qty, 0) AS currentQty,
             GREATEST(
                 mr.request_qty - mr.issued_qty - COALESCE(inv.current_qty, 0),
                 0
@@ -476,7 +633,7 @@
           ON inv.item_id = mr.item_id
          AND inv.department_id = mr.department_id
         WHERE mr.request_id = #{requestId}
-          AND mr.status IN ('REQUESTED', 'PARTIAL')
+          AND mr.status = 'SHORTAGE'
           AND GREATEST(
               mr.request_qty - mr.issued_qty - COALESCE(inv.current_qty, 0),
               0
@@ -519,7 +676,7 @@
           ON inv.item_id = mr.item_id
          AND inv.department_id = mr.department_id
         WHERE mr.request_id = #{materialRequestId}
-          AND mr.status IN ('REQUESTED', 'PARTIAL')
+          AND mr.status = 'SHORTAGE'
           AND GREATEST(
               mr.request_qty - mr.issued_qty - COALESCE(inv.current_qty, 0),
               0

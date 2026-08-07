@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
 <!DOCTYPE html>
 <html lang="ko">
@@ -13,6 +14,7 @@
           rel="stylesheet">
     <link rel="stylesheet"
           href="${pageContext.request.contextPath}/resources/css/common.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/purchase.css">
 </head>
 <body>
     <jsp:include page="/WEB-INF/views/common/sidebar.jsp" />
@@ -30,11 +32,24 @@
             </section>
 
             <c:if test="${not empty success}">
-                <p class="flash success"><c:out value="${success}" /></p>
+                <p class="purchase-flash success"><c:out value="${success}" /></p>
             </c:if>
             <c:if test="${not empty error}">
-                <p class="flash error"><c:out value="${error}" /></p>
+                <p class="purchase-flash error"><c:out value="${error}" /></p>
             </c:if>
+
+            <form class="panel purchase-filter-form" method="get">
+                <input class="table-search" type="search" name="keyword" value="<c:out value='${keyword}'/>" placeholder="견적·조달번호, 품목, 업체 검색">
+                <select name="status" aria-label="견적 상태">
+                    <option value="">전체 상태</option>
+                    <option value="REQUESTED" ${status == 'REQUESTED' ? 'selected' : ''}>제출 대기</option>
+                    <option value="SUBMITTED" ${status == 'SUBMITTED' ? 'selected' : ''}>제출 완료</option>
+                    <option value="SELECTED" ${status == 'SELECTED' ? 'selected' : ''}>선정</option>
+                    <option value="REJECTED" ${status == 'REJECTED' ? 'selected' : ''}>미선정</option>
+                </select>
+                <button class="purchase-action-button" type="submit">검색</button>
+                <a class="purchase-action-button secondary" href="${pageContext.request.contextPath}/purchase/quotes">초기화</a>
+            </form>
 
             <section class="panel table-panel">
                 <div class="panel-header">
@@ -58,7 +73,10 @@
                                 <th>업체명</th>
                                 <th>견적상태</th>
                                 <th>단가</th>
+                                <th>예상 총액</th>
                                 <th>납품 가능일</th>
+                                <th>자재 필요일</th>
+                                <th>납기 판정</th>
                                 <th>거래조건</th>
                                 <th>제출일시</th>
                                 <th>등록일</th>
@@ -67,7 +85,7 @@
                         </thead>
                         <tbody>
                             <c:forEach var="quote" items="${quotes}">
-                                <tr>
+                                <tr class="${quote.status == 'SELECTED' ? 'purchase-selected-quote' : ''}">
                                     <td><c:out value="${quote.quoteId}" /></td>
                                     <td>
                                         <a href="${pageContext.request.contextPath}/purchase/procurements/${quote.procurementId}">
@@ -86,9 +104,18 @@
                                             <c:out value="${quote.vendorName}" />
                                         </a>
                                     </td>
-                                    <td><span class="state-badge enabled"><c:out value="${quote.status}" /></span></td>
-                                    <td><c:out value="${quote.unitPrice}" default="미제출" /></td>
+                                    <td><span class="state-badge purchase-status ${fn:toLowerCase(quote.status)}"><c:out value="${quote.status}" /></span></td>
+                                    <td class="purchase-number"><c:out value="${quote.unitPrice}" default="미제출" /></td>
+                                    <td class="purchase-number"><c:out value="${quote.totalPrice}" default="미제출" /></td>
                                     <td><c:out value="${quote.deliveryDate}" default="미제출" /></td>
+                                    <td><c:out value="${quote.requiredDate}" /></td>
+                                    <td>
+                                        <c:choose>
+                                            <c:when test="${empty quote.deliveryDate}">-</c:when>
+                                            <c:when test="${quote.deliveryDate le quote.requiredDate}"><span class="state-badge purchase-status received">납기 가능</span></c:when>
+                                            <c:otherwise><span class="state-badge purchase-status returned">납기 지연</span></c:otherwise>
+                                        </c:choose>
+                                    </td>
                                     <td><c:out value="${quote.terms}" default="-" /></td>
                                     <td><c:out value="${quote.submittedAt}" default="미제출" /></td>
                                     <td><c:out value="${quote.createdAt}" /></td>
@@ -98,7 +125,7 @@
                                                 <form method="post"
                                                       action="${pageContext.request.contextPath}/purchase/procurements/${quote.procurementId}/quotes/${quote.quoteId}/select"
                                                       onsubmit="return confirm('이 협력업체의 견적을 선정하시겠습니까?');">
-                                                    <button class="action-button" type="submit">선정</button>
+                                                    <button class="purchase-action-button" type="submit">선정</button>
                                                 </form>
                                             </c:when>
                                             <c:when test="${quote.status == 'SELECTED'}">
@@ -112,7 +139,7 @@
 
                             <c:if test="${empty quotes}">
                                 <tr>
-                                    <td class="empty-cell" colspan="14">
+                                    <td class="empty-cell" colspan="17">
                                         등록된 업체 견적이 없습니다.
                                     </td>
                                 </tr>

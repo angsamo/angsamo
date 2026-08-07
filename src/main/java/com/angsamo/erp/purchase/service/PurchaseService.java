@@ -32,7 +32,12 @@ public class PurchaseService {
 
     @Transactional(readOnly = true)
     public List<VendorListItem> getVendors() {
-        return purchaseMapper.findAllVendors();
+        return getVendors(null, null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<VendorListItem> getVendors(String keyword, Boolean active) {
+        return purchaseMapper.findAllVendors(normalizeFilter(keyword), active);
     }
 
     @Transactional(readOnly = true)
@@ -115,6 +120,14 @@ public class PurchaseService {
         return purchaseMapper.findShortageMaterialRequests();
     }
 
+    @Transactional(readOnly = true)
+    public ShortageMaterialRequestItem getShortageMaterialRequest(Long requestId) {
+        if (requestId == null) {
+            throw new IllegalArgumentException("자재요청 번호를 확인하세요.");
+        }
+        return purchaseMapper.findShortageById(requestId);
+    }
+
     @Transactional
     public void createProcurement(
             ProcurementCreateForm form,
@@ -165,7 +178,17 @@ public class PurchaseService {
 
     @Transactional(readOnly = true)
     public List<ProcurementListItem> getProcurements() {
-        return purchaseMapper.findProcurements();
+        return getProcurements(null, null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProcurementListItem> getProcurements(String keyword, String status) {
+        return purchaseMapper.findProcurements(
+                normalizeFilter(keyword), normalizeFilter(status));
+    }
+
+    private String normalizeFilter(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     @Transactional(readOnly = true)
@@ -246,13 +269,32 @@ public class PurchaseService {
                     "REQUESTED 상태에서만 견적을 요청할 수 있습니다.");
         }
 
+        if (!admin && !java.util.Objects.equals(
+                procurement.getDepartmentId(), departmentId)) {
+            throw new SecurityException(
+                    "다른 부서의 조달업무에는 견적을 요청할 수 없습니다.");
+        }
+
+        if (procurement.getQuoteDeadline() == null
+                || procurement.getQuoteDeadline().isBefore(LocalDate.now())) {
+            throw new IllegalStateException(
+                    "견적 마감일이 지나 견적을 요청할 수 없습니다.");
+        }
+
+        if (form == null || form.getVendorIds() == null) {
+            throw new IllegalArgumentException(
+                    "비교 견적을 위해 협력업체를 두 곳 이상 선택하세요.");
+        }
+
         List<Long> vendorIds = form.getVendorIds()
                 .stream()
+                .filter(java.util.Objects::nonNull)
                 .distinct()
                 .toList();
 
-        if (vendorIds.isEmpty()) {
-            throw new IllegalArgumentException("협력업체를 선택하세요.");
+        if (vendorIds.size() < 2) {
+            throw new IllegalArgumentException(
+                    "비교 견적을 위해 서로 다른 협력업체를 두 곳 이상 선택하세요.");
         }
 
         for (Long vendorId : vendorIds) {
@@ -275,7 +317,13 @@ public class PurchaseService {
 
     @Transactional(readOnly = true)
     public List<VendorQuoteListItem> getVendorQuotes() {
-        return purchaseMapper.findVendorQuotes();
+        return getVendorQuotes(null, null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<VendorQuoteListItem> getVendorQuotes(String keyword, String status) {
+        return purchaseMapper.findVendorQuotes(
+                normalizeFilter(keyword), normalizeFilter(status));
     }
 
     @Transactional
@@ -344,6 +392,28 @@ public class PurchaseService {
             throw new IllegalArgumentException("요구 납기일을 입력하세요.");
         }
 
+        ProcurementDetail procurement =
+                purchaseMapper.findProcurementById(procurementId);
+        if (procurement == null) {
+            throw new IllegalArgumentException("조달업무를 찾을 수 없습니다.");
+        }
+        if (!"CONTRACTED".equals(procurement.getStatus())) {
+            throw new IllegalStateException("계약 확정된 조달업무만 발주할 수 있습니다.");
+        }
+        if (procurement.getRequestQty() == null
+                || orderQty.compareTo(procurement.getRequestQty()) != 0) {
+            throw new IllegalArgumentException(
+                    "발주 수량은 조달 필요수량과 같아야 합니다.");
+        }
+        if (requiredDate.isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("요구 납기일은 오늘 이후여야 합니다.");
+        }
+        if (procurement.getRequiredDate() != null
+                && requiredDate.isAfter(procurement.getRequiredDate())) {
+            throw new IllegalArgumentException(
+                    "요구 납기일은 자재 필요일보다 늦을 수 없습니다.");
+        }
+
         int updated = purchaseMapper.issuePurchaseOrder(
                 procurementId,
                 orderQty,
@@ -364,7 +434,14 @@ public class PurchaseService {
 
     @Transactional(readOnly = true)
     public List<PurchaseReceivingItem> getPurchaseReceivings() {
-        return purchaseMapper.findPurchaseReceivings();
+        return getPurchaseReceivings(null, null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PurchaseReceivingItem> getPurchaseReceivings(
+            String keyword, String status) {
+        return purchaseMapper.findPurchaseReceivings(
+                normalizeFilter(keyword), normalizeFilter(status));
     }
 
     @Transactional

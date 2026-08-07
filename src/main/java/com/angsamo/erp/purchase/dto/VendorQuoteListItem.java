@@ -27,7 +27,10 @@ public class VendorQuoteListItem {
     private String vendorName;
     private String status;
     private BigDecimal unitPrice;
+    private BigDecimal totalPrice;
     private LocalDate deliveryDate;
+    private LocalDate requiredDate;
+    private LocalDate quoteDeadline;
     private String terms;
     private LocalDateTime submittedAt;
     private LocalDateTime createdAt;

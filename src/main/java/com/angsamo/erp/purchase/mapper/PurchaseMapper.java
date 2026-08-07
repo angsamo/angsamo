@@ -21,7 +21,9 @@ import com.angsamo.erp.purchase.dto.VendorAccountItem;
 @Mapper
 public interface PurchaseMapper {
 
-    List<VendorListItem> findAllVendors();
+    List<VendorListItem> findAllVendors(
+            @Param("keyword") String keyword,
+            @Param("active") Boolean active);
 
     List<VendorListItem> findActiveVendors();
 
@@ -44,6 +46,9 @@ public interface PurchaseMapper {
 
     List<ShortageMaterialRequestItem> findShortageMaterialRequests();
 
+    ShortageMaterialRequestItem findShortageById(
+            @Param("requestId") Long requestId);
+
     ShortageMaterialRequestItem findShortageForUpdate(
             @Param("requestId") Long requestId);
 
@@ -56,7 +61,9 @@ public interface PurchaseMapper {
             @Param("quoteDeadline") LocalDate quoteDeadline,
             @Param("createdBy") Long createdBy);
 
-    List<ProcurementListItem> findProcurements();
+    List<ProcurementListItem> findProcurements(
+            @Param("keyword") String keyword,
+            @Param("status") String status);
 
     ProcurementDetail findProcurementById(
             @Param("procurementId") Long procurementId);
@@ -82,7 +89,9 @@ public interface PurchaseMapper {
             @Param("departmentId") Long departmentId,
             @Param("admin") boolean admin);
 
-    List<VendorQuoteListItem> findVendorQuotes();
+    List<VendorQuoteListItem> findVendorQuotes(
+            @Param("keyword") String keyword,
+            @Param("status") String status);
 
     int selectProcurementQuote(
             @Param("procurementId") Long procurementId,
@@ -113,7 +122,9 @@ public interface PurchaseMapper {
 
     List<PurchaseProgressItem> findPurchaseProgress();
 
-    List<PurchaseReceivingItem> findPurchaseReceivings();
+    List<PurchaseReceivingItem> findPurchaseReceivings(
+            @Param("keyword") String keyword,
+            @Param("status") String status);
 
     int closeReceivedOrder(
             @Param("procurementId") Long procurementId,
