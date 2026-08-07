@@ -327,8 +327,7 @@
                     <c:forEach var="requirement"
                                items="${requirements}">
 
-                        <c:if test="${requirement.shortageQty != null
-                                    and requirement.shortageQty == 0}">
+                        <c:if test="${requirement.stockSufficient}">
 
                             <c:set var="availableCount"
                                    value="${availableCount + 1}" />
@@ -358,8 +357,7 @@
                     <c:forEach var="requirement"
                                items="${requirements}">
 
-                        <c:if test="${requirement.shortageQty != null
-                                    and requirement.shortageQty > 0}">
+                        <c:if test="${requirement.shortage}">
 
                             <c:set var="shortageCount"
                                    value="${shortageCount + 1}" />
@@ -500,7 +498,7 @@
 
                                         <td>
                                             <c:choose>
-                                                <c:when test="${requirement.shortageQty == 0}">
+                                            <c:when test="${requirement.stockSufficient}">
                                                     <span class="quantity shortage-zero">
                                                         0
                                                     </span>
@@ -527,7 +525,7 @@
 
                                         <td>
                                             <c:choose>
-                                                <c:when test="${requirement.shortageQty == 0}">
+                                            <c:when test="${requirement.stockSufficient}">
                                                     <span class="status-badge available">
                                                         재고 충족
                                                     </span>

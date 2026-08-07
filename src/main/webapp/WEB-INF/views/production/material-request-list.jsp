@@ -330,9 +330,10 @@
 
                                                 <c:when test="${request.status == 'REJECTED'}">
                                                     <span class="status-badge rejected">
-                                                        취소·반려
+                                                        반려
                                                     </span>
                                                 </c:when>
+
 
                                                 <c:otherwise>
                                                     <span class="status-badge unknown">

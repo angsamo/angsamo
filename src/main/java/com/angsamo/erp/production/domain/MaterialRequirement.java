@@ -112,6 +112,16 @@ public class MaterialRequirement {
         this.shortageQty = shortageQty;
     }
 
+    public boolean isStockSufficient() {
+        return shortageQty != null
+                && shortageQty.compareTo(BigDecimal.ZERO) <= 0;
+    }
+
+    public boolean isShortage() {
+        return shortageQty != null
+                && shortageQty.compareTo(BigDecimal.ZERO) > 0;
+    }
+
     public LocalDate getRequiredDate() {
         return requiredDate;
     }

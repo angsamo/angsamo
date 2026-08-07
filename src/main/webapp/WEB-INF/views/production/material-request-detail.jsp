@@ -351,7 +351,7 @@
 
                                 <c:when test="${materialRequest.status == 'REJECTED'}">
                                     <span class="status-badge rejected">
-                                        취소·반려
+                                        반려
                                     </span>
                                 </c:when>
 
@@ -438,7 +438,9 @@
                         목록
                     </a>
 
-                    <c:if test="${materialRequest.status == 'REQUESTED'}">
+                    <c:if test="${materialRequest.status == 'REQUESTED'
+                                  and (sessionScope.loginUser.role == 'ADMIN'
+                                       or sessionScope.loginUser.departmentCode == 'PRODUCTION')}">
 
                         <a class="action-button edit-button"
                            href="${pageContext.request.contextPath}/production/material-requests/${materialRequest.requestId}/edit">

@@ -16,17 +16,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             component.unit,
             pp.production_qty,
             b.required_qty AS bom_required_qty,
-            COALESCE(inv.current_qty, 0) AS available_qty,
+            COALESCE((
+                SELECT SUM(inv.current_qty)
+                FROM inventory inv
+                WHERE inv.item_id = b.component_item_id
+            ), 0) AS available_qty,
             pp.due_date AS required_date
         FROM production_plan pp
         JOIN bom b
           ON b.parent_item_id = pp.item_id
         JOIN item component
           ON component.item_id = b.component_item_id
-        LEFT JOIN inventory inv
-          ON inv.item_id = b.component_item_id
-         AND inv.department_id = pp.department_id
-        WHERE pp.status NOT IN ('COMPLETED', 'CANCELLED', 'CANCELED')
+        WHERE pp.status NOT IN ('COMPLETED', 'CANCELLED')
         ORDER BY pp.due_date, pp.production_plan_id, component.item_code
     </select>
 

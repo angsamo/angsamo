@@ -160,12 +160,15 @@
                 </p>
             </div>
 
-            <a class="primary-button"
-               href="${pageContext.request.contextPath}/production/plans/new">
+            <c:if test="${sessionScope.loginUser.role == 'ADMIN'
+                          or sessionScope.loginUser.departmentCode == 'PRODUCTION'}">
+                <a class="primary-button"
+                   href="${pageContext.request.contextPath}/production/plans/new">
 
-                <span class="material-symbols-outlined">add</span>
-                <span>생산계획 등록</span>
-            </a>
+                    <span class="material-symbols-outlined">add</span>
+                    <span>생산계획 등록</span>
+                </a>
+            </c:if>
 
         </section>
 
@@ -228,13 +231,16 @@
 
                         <p>등록된 생산계획이 없습니다.</p>
 
-                        <a class="primary-button"
-                           href="${pageContext.request.contextPath}/production/plans/new"
-                           style="display:inline-flex;">
+                        <c:if test="${sessionScope.loginUser.role == 'ADMIN'
+                                      or sessionScope.loginUser.departmentCode == 'PRODUCTION'}">
+                            <a class="primary-button"
+                               href="${pageContext.request.contextPath}/production/plans/new"
+                               style="display:inline-flex;">
 
-                            <span class="material-symbols-outlined">add</span>
-                            <span>첫 생산계획 등록</span>
-                        </a>
+                                <span class="material-symbols-outlined">add</span>
+                                <span>첫 생산계획 등록</span>
+                            </a>
+                        </c:if>
 
                     </div>
 

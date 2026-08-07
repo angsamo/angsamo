@@ -11,6 +11,8 @@ import com.angsamo.erp.common.session.LoginUser;
 import com.angsamo.erp.development.domain.Item;
 import com.angsamo.erp.development.mapper.ItemMapper;
 import com.angsamo.erp.production.domain.ProductionPlan;
+import com.angsamo.erp.production.domain.MaterialRequest;
+import com.angsamo.erp.production.mapper.MaterialRequestMapper;
 import com.angsamo.erp.production.mapper.ProductionPlanMapper;
 
 @Service
@@ -25,13 +27,16 @@ public class ProductionPlanService {
 
     private final ProductionPlanMapper productionPlanMapper;
     private final ItemMapper itemMapper;
+    private final MaterialRequestMapper materialRequestMapper;
 
     public ProductionPlanService(
             ProductionPlanMapper productionPlanMapper,
-            ItemMapper itemMapper
+            ItemMapper itemMapper,
+            MaterialRequestMapper materialRequestMapper
     ) {
         this.productionPlanMapper = productionPlanMapper;
         this.itemMapper = itemMapper;
+        this.materialRequestMapper = materialRequestMapper;
     }
 
     // 생산계획 목록 조회
@@ -179,6 +184,10 @@ public class ProductionPlanService {
             );
         }
 
+        if ("COMPLETED".equals(normalizedStatus)) {
+            validateAllMaterialsIssued(productionPlanId);
+        }
+
         int updatedCount =
                 productionPlanMapper.updateStatus(
                         productionPlanId,
@@ -188,6 +197,26 @@ public class ProductionPlanService {
         if (updatedCount == 0) {
             throw new IllegalStateException(
                     "생산계획 상태를 변경하지 못했습니다."
+            );
+        }
+    }
+
+    private void validateAllMaterialsIssued(Long productionPlanId) {
+        List<MaterialRequest> requests =
+                materialRequestMapper.findByProductionPlanId(productionPlanId);
+
+        if (requests == null || requests.isEmpty()) {
+            throw new IllegalStateException(
+                    "자재요청을 생성한 후 생산을 완료할 수 있습니다."
+            );
+        }
+
+        boolean pendingRequest = requests.stream()
+                .anyMatch(request -> !"ISSUED".equals(request.getStatus()));
+
+        if (pendingRequest) {
+            throw new IllegalStateException(
+                    "모든 자재가 불출 완료된 후 생산을 완료할 수 있습니다."
             );
         }
     }
