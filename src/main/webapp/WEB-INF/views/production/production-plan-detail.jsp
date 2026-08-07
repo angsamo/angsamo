@@ -343,7 +343,7 @@
                                     <span class="status-badge completed">완료</span>
                                 </c:when>
 
-                                <c:when test="${productionPlan.status == 'CANCELLED'}">
+                                <c:when test="${productionPlan.status == 'CANCELED'}">
                                     <span class="status-badge cancelled">취소</span>
                                 </c:when>
 
@@ -382,6 +382,8 @@
 
                 </table>
 
+                <c:if test="${sessionScope.loginUser.role == 'ADMIN'
+                              or sessionScope.loginUser.departmentCode == 'PRODUCTION'}">
                 <div class="status-panel">
                     <h3>생산계획 상태 변경</h3>
 
@@ -411,8 +413,8 @@
                                 완료
                             </option>
 
-                            <option value="CANCELLED"
-                                <c:if test="${productionPlan.status == 'CANCELLED'}">
+                            <option value="CANCELED"
+                                <c:if test="${productionPlan.status == 'CANCELED'}">
                                     selected
                                 </c:if>>
                                 취소
@@ -426,6 +428,7 @@
 
                     </form>
                 </div>
+                </c:if>
 
 				<div class="detail-actions">
 
@@ -439,6 +442,8 @@
 				        목록
 				    </a>
 
+				    <c:if test="${sessionScope.loginUser.role == 'ADMIN'
+				                  or sessionScope.loginUser.departmentCode == 'PRODUCTION'}">
 				    <form action="${pageContext.request.contextPath}/production/material-requests/production-plan/${productionPlan.productionPlanId}/create"
 				          method="post"
 				          style="display:inline;">
@@ -466,6 +471,7 @@
 
 				        수정
 				    </a>
+				    </c:if>
 
 				</div>
 

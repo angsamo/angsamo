@@ -124,6 +124,7 @@ public class MaterialRequestController {
     public String editForm(
             @PathVariable Long requestId,
             Model model,
+            HttpSession session,
             RedirectAttributes redirectAttributes
     ) {
         MaterialRequest materialRequest =
@@ -136,6 +137,19 @@ public class MaterialRequestController {
             );
 
             return "redirect:/production/material-requests";
+        }
+
+        if (!canManageMaterialRequest(
+                getLoginUser(session),
+                materialRequest
+        )) {
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    "자재요청을 수정할 권한이 없습니다."
+            );
+
+            return "redirect:/production/material-requests/"
+                    + requestId;
         }
 
         model.addAttribute(
@@ -298,5 +312,24 @@ public class MaterialRequestController {
         }
 
         return null;
+    }
+
+    private boolean canManageMaterialRequest(
+            LoginUser loginUser,
+            MaterialRequest materialRequest
+    ) {
+        if (loginUser == null || materialRequest == null) {
+            return false;
+        }
+
+        if ("ADMIN".equals(loginUser.getRole())) {
+            return true;
+        }
+
+        return "PRODUCTION".equals(loginUser.getDepartmentCode())
+                && loginUser.getDepartmentId() != null
+                && loginUser.getDepartmentId().equals(
+                        materialRequest.getDepartmentId()
+                );
     }
 }

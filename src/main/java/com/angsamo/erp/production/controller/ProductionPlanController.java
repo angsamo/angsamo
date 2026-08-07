@@ -48,7 +48,19 @@ public class ProductionPlanController {
     }
 
     @GetMapping("/new")
-    public String createForm(Model model) {
+    public String createForm(
+            Model model,
+            HttpSession session,
+            RedirectAttributes redirectAttributes
+    ) {
+        if (!canManageProductionPlan(getLoginUser(session))) {
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    "생산계획을 등록할 권한이 없습니다."
+            );
+
+            return "redirect:/production/plans";
+        }
 
         if (!model.containsAttribute("productionPlan")) {
             ProductionPlan productionPlan = new ProductionPlan();

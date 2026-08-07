@@ -163,7 +163,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         UPDATE material_request
 
         SET
-            status = 'REJECTED',
+            status = 'CANCELED',
             updated_at = CURRENT_TIMESTAMP
 
         WHERE request_id = #{requestId}
