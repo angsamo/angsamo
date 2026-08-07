@@ -343,7 +343,7 @@
                                     <span class="status-badge completed">완료</span>
                                 </c:when>
 
-                                <c:when test="${productionPlan.status == 'CANCELED'}">
+                                <c:when test="${productionPlan.status == 'CANCELLED'}">
                                     <span class="status-badge cancelled">취소</span>
                                 </c:when>
 
@@ -413,8 +413,8 @@
                                 완료
                             </option>
 
-                            <option value="CANCELED"
-                                <c:if test="${productionPlan.status == 'CANCELED'}">
+                            <option value="CANCELLED"
+                                <c:if test="${productionPlan.status == 'CANCELLED'}">
                                     selected
                                 </c:if>>
                                 취소

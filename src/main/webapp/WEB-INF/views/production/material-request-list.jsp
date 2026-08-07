@@ -334,11 +334,6 @@
                                                     </span>
                                                 </c:when>
 
-                                                <c:when test="${request.status == 'CANCELED'}">
-                                                    <span class="status-badge rejected">
-                                                        취소
-                                                    </span>
-                                                </c:when>
 
                                                 <c:otherwise>
                                                     <span class="status-badge unknown">

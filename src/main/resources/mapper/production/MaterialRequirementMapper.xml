@@ -27,7 +27,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
           ON b.parent_item_id = pp.item_id
         JOIN item component
           ON component.item_id = b.component_item_id
-        WHERE pp.status NOT IN ('COMPLETED', 'CANCELED')
+        WHERE pp.status NOT IN ('COMPLETED', 'CANCELLED')
         ORDER BY pp.due_date, pp.production_plan_id, component.item_code
     </select>
 

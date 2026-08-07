@@ -355,12 +355,6 @@
                                     </span>
                                 </c:when>
 
-                                <c:when test="${materialRequest.status == 'CANCELED'}">
-                                    <span class="status-badge rejected">
-                                        취소
-                                    </span>
-                                </c:when>
-
                                 <c:otherwise>
                                     <span class="status-badge unknown">
                                         <c:out value="${materialRequest.status}" />

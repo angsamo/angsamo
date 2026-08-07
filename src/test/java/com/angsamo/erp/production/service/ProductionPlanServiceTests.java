@@ -30,18 +30,18 @@ class ProductionPlanServiceTests {
     );
 
     @Test
-    void updatesCanceledStatusUsingDatabaseCode() {
+    void updatesCancelledStatusUsingDatabaseCode() {
         ProductionPlan plan = productionPlan(10L, 2L);
         when(productionPlanMapper.findById(10L)).thenReturn(plan);
-        when(productionPlanMapper.updateStatus(10L, "CANCELED")).thenReturn(1);
+        when(productionPlanMapper.updateStatus(10L, "CANCELLED")).thenReturn(1);
 
-        service.updateStatus(10L, "canceled", productionUser(2L));
+        service.updateStatus(10L, "cancelled", productionUser(2L));
 
-        verify(productionPlanMapper).updateStatus(10L, "CANCELED");
+        verify(productionPlanMapper).updateStatus(10L, "CANCELLED");
     }
 
     @Test
-    void rejectsMisspelledCancelledStatus() {
+    void rejectsMisspelledCanceledStatus() {
         when(productionPlanMapper.findById(10L))
                 .thenReturn(productionPlan(10L, 2L));
 
@@ -49,7 +49,7 @@ class ProductionPlanServiceTests {
                 IllegalArgumentException.class,
                 () -> service.updateStatus(
                         10L,
-                        "CANCELLED",
+                        "CANCELED",
                         productionUser(2L)
                 )
         );

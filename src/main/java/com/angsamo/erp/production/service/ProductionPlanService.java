@@ -22,7 +22,7 @@ public class ProductionPlanService {
             "PLANNED",
             "IN_PROGRESS",
             "COMPLETED",
-            "CANCELED"
+            "CANCELLED"
     );
 
     private final ProductionPlanMapper productionPlanMapper;

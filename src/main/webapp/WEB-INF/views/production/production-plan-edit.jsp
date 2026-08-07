@@ -369,7 +369,7 @@
                                         </span>
                                     </c:when>
 
-                                    <c:when test="${productionPlan.status == 'CANCELED'}">
+                                    <c:when test="${productionPlan.status == 'CANCELLED'}">
                                         <span class="status-badge cancelled">
                                             취소
                                         </span>
