@@ -32,6 +32,8 @@ class MaterialIssueServiceTests {
         service.processIssue(((Number) request.get("issueId")).longValue(), requestedQty, 1L);
         MaterialInventoryItem after = service.inventory().stream()
                 .filter(row -> request.get("itemCode").equals(row.getItemCode()))
+                .filter(row -> ((Number) request.get("inventoryDepartmentId")).longValue()
+                        == row.getDepartmentId())
                 .findFirst().orElseThrow();
         assertEquals(before - requestedQty, after.getCurrentQty().intValue());
     }

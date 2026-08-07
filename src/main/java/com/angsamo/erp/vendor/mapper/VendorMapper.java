@@ -27,6 +27,10 @@ public interface VendorMapper {
             @Param("unitPrice") BigDecimal unitPrice, @Param("deliveryDate") LocalDate deliveryDate,
             @Param("terms") String terms);
     int startProduction(@Param("procurementId") long procurementId, @Param("vendorId") long vendorId);
-    int shipOrder(@Param("procurementId") long procurementId, @Param("vendorId") long vendorId);
+    int shipOrder(@Param("procurementId") long procurementId, @Param("vendorId") long vendorId,
+            @Param("shipmentDate") LocalDate shipmentDate);
+    int saveSupplement(@Param("procurementId") long procurementId, @Param("vendorId") long vendorId,
+            @Param("supplement") String supplement);
     int reshipReturn(@Param("procurementId") long procurementId, @Param("vendorId") long vendorId);
+    int saveStatement(@Param("procurementId") long procurementId, @Param("vendorId") long vendorId);
 }

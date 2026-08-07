@@ -312,6 +312,14 @@
     margin: 0;
 }
 
+/* 상세 화면 입력 폼은 공통 패널 폭과 입력 규격을 유지한다. */
+.vendor-form { margin-top: 20px; }
+.vendor-form-grid { display: grid; grid-template-columns: repeat(3, minmax(160px, 1fr)); gap: 12px; }
+.vendor-form label { display: grid; gap: 7px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.vendor-form input, .vendor-form textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; background: #fff; color: var(--text); font: inherit; }
+.vendor-form input { height: 42px; }
+.vendor-form textarea { resize: vertical; }
+
 .statement-parties {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -382,6 +390,10 @@
 
     .vendor-detail-actions .vendor-button {
         width: 100%;
+    }
+
+    .vendor-form-grid {
+        grid-template-columns: 1fr;
     }
 }
 .quote-status-group{display:flex;gap:6px;align-items:center;flex-wrap:wrap}

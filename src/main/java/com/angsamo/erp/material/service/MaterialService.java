@@ -88,6 +88,34 @@ public class MaterialService {
     }
 
     @Transactional
+    public void registerReturn(long returnId, int returnQty, String reason) {
+        if (returnQty <= 0) throw new IllegalArgumentException("반품 수량은 0보다 커야 합니다.");
+        if (reason == null || reason.isBlank()) throw new IllegalArgumentException("반품 사유를 입력해 주세요.");
+        Map<String, Object> row = required(mapper.lockReturn(returnId), "반품 대상 입고 건을 찾을 수 없습니다.");
+        if (!"RETURNED".equals(row.get("status"))) {
+            throw new IllegalStateException("검수에서 반품 판정된 건만 반품 요청할 수 있습니다.");
+        }
+        int rejectedQty = ((Number) row.get("returnQty")).intValue();
+        if (returnQty != rejectedQty) {
+            throw new IllegalArgumentException("반품 수량은 검수 불량 수량과 같아야 합니다.");
+        }
+        if (mapper.requestReturn(returnId, reason.trim()) != 1) {
+            throw new IllegalStateException("반품 상태가 변경되었습니다. 목록을 새로고침해 주세요.");
+        }
+    }
+
+    @Transactional
+    public void receiveReturn(long returnId, long userId) {
+        Map<String, Object> row = required(mapper.lockShipment(returnId), "재입고 대상 건을 찾을 수 없습니다.");
+        if (!"SHIPPED".equals(row.get("procurementStatus"))
+                || !"RETURNED".equals(row.get("inspectionResult"))) {
+            throw new IllegalStateException("보완 후 재출하된 반품 건만 재입고할 수 있습니다.");
+        }
+        int quantity = ((Number) row.get("shipmentQty")).intValue();
+        inspect(returnId, quantity, 0, null, true, true, true, userId);
+    }
+
+    @Transactional
     public void approveIssue(long issueId, long userId) {
         Map<String, Object> row = required(mapper.lockIssue(issueId), "자재 요청을 찾을 수 없습니다.");
         if (!"REQUESTED".equals(row.get("status")) && !"SHORTAGE".equals(row.get("status"))) throw new IllegalStateException("요청 또는 재고 부족 상태만 승인할 수 있습니다.");
@@ -112,13 +140,19 @@ public class MaterialService {
         requireActiveItem(row);
         BigDecimal requested = decimal(row.get("releaseQty"));
         if (qty.compareTo(requested) != 0) throw new IllegalArgumentException("승인된 요청 수량 전체를 입력해 주세요.");
-        long departmentId = ((Number) row.get("departmentId")).longValue();
+        Number inventoryDepartment = (Number) row.get("inventoryDepartmentId");
+        if (inventoryDepartment == null) {
+            throw new IllegalStateException("입고 완료된 조달 건의 재고 부서를 찾을 수 없습니다.");
+        }
+        // material_request.department_id는 생산 요청 부서이고 실제 차감 위치는 연결 조달의 부서이다.
+        long inventoryDepartmentId = inventoryDepartment.longValue();
         long itemId = ((Number) row.get("itemId")).longValue();
-        if (mapper.decreaseInventory(departmentId, itemId, qty) != 1) {
+        if (mapper.decreaseInventory(inventoryDepartmentId, itemId, qty) != 1) {
             mapper.changeIssueStatus(issueId, List.of("APPROVED"), "SHORTAGE", userId);
             throw new InventoryShortageException("재고가 부족하여 요청 상태를 재고 부족으로 변경했습니다.");
         }
-        mapper.insertStockMovement(departmentId, itemId, "OUT", qty, "MATERIAL_REQUEST", issueId, userId, null);
+        mapper.insertStockMovement(inventoryDepartmentId, itemId, "OUT", qty,
+                "MATERIAL_REQUEST", issueId, userId, null);
         if (mapper.updateIssue(issueId, qty, "ISSUED", userId) != 1) throw new IllegalStateException("요청이 중복 처리되었습니다.");
     }
 

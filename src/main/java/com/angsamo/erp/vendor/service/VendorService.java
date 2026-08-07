@@ -86,9 +86,37 @@ public class VendorService {
     }
 
     @Transactional
-    public void shipOrder(long procurementId, long vendorId) {
-        if (vendorMapper.shipOrder(procurementId, vendorId) != 1) {
+    public void shipOrder(long procurementId, long vendorId, BigDecimal shipmentQty,
+            LocalDate shipmentDate, LocalDate expectedArrivalDate) {
+        VendorOrderItem order = order(procurementId, vendorId);
+        if (shipmentQty == null || shipmentQty.signum() <= 0
+                || shipmentQty.compareTo(order.getOrderQty()) != 0) {
+            throw new IllegalArgumentException("출하 수량은 발주 수량 전체와 같아야 합니다.");
+        }
+        if (shipmentDate == null || shipmentDate.isAfter(LocalDate.now())) {
+            throw new IllegalArgumentException("출하일은 오늘 또는 이전 날짜여야 합니다.");
+        }
+        if (expectedArrivalDate == null || !expectedArrivalDate.equals(order.getRequiredDate())) {
+            throw new IllegalArgumentException("도착 예정일은 발주서의 납기일과 같아야 합니다.");
+        }
+        if (shipmentDate.isAfter(expectedArrivalDate)) {
+            throw new IllegalArgumentException("출하일은 도착 예정일보다 늦을 수 없습니다.");
+        }
+        if (vendorMapper.shipOrder(procurementId, vendorId, shipmentDate) != 1) {
             throw new IllegalStateException("제작 중인 내 회사 조달 건만 출하할 수 있습니다.");
+        }
+    }
+
+    @Transactional
+    public void saveSupplement(long procurementId, long vendorId, String supplement) {
+        if (supplement == null || supplement.isBlank()) {
+            throw new IllegalArgumentException("보완 결과를 입력해 주세요.");
+        }
+        if (supplement.length() > 500) {
+            throw new IllegalArgumentException("보완 결과는 500자 이내로 입력해 주세요.");
+        }
+        if (vendorMapper.saveSupplement(procurementId, vendorId, supplement.trim()) != 1) {
+            throw new IllegalStateException("보완 가능한 반품 건이 아니거나 협력회사 정보가 일치하지 않습니다.");
         }
     }
 
@@ -96,6 +124,13 @@ public class VendorService {
     public void reshipReturn(long procurementId, long vendorId) {
         if (vendorMapper.reshipReturn(procurementId, vendorId) != 1) {
             throw new IllegalStateException("보완 대상인 내 회사 반품 건만 재출하할 수 있습니다.");
+        }
+    }
+
+    @Transactional
+    public void saveStatement(long procurementId, long vendorId) {
+        if (vendorMapper.saveStatement(procurementId, vendorId) != 1) {
+            throw new IllegalStateException("입고 완료된 자사 거래 건만 거래명세서를 등록할 수 있습니다.");
         }
     }
 

@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.angsamo.erp.material.service.MaterialService;
@@ -110,6 +111,18 @@ public class MaterialController {
 		LoginUser user = (LoginUser) session.getAttribute(LoginUser.SESSION_KEY);
 		if (user == null || user.getUserId() == null) throw new IllegalStateException("로그인이 필요합니다.");
 		return user.getUserId();
+	}
+	@PostMapping("/returns")
+	public String registerReturn(@RequestParam long returnId, @RequestParam int returnQty,
+			@RequestParam String reason, RedirectAttributes redirect) {
+		return execute(redirect, "/material/returns",
+				() -> service.registerReturn(returnId, returnQty, reason), "반품 요청을 등록했습니다.");
+	}
+	@PostMapping("/returns/{returnId}/receive")
+	public String receiveReturn(@PathVariable long returnId, HttpSession session,
+			RedirectAttributes redirect) {
+		return execute(redirect, "/material/returns",
+				() -> service.receiveReturn(returnId, userId(session)), "재입고 검수와 재고 반영을 완료했습니다.");
 	}
 	private String execute(RedirectAttributes redirect, String path, Runnable action, String message) {
 		try { action.run(); redirect.addFlashAttribute("success", message); }
