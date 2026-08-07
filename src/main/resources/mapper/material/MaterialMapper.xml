@@ -208,12 +208,13 @@
 	</select>
 
 	<select id="lockShipment" resultType="map">
-		SELECT p.procurement_id shipmentId,p.procurement_id poId,p.department_id departmentId,p.order_qty shipmentQty,
+		SELECT p.procurement_id shipmentId,p.procurement_id poId,COALESCE(mr.department_id,p.department_id) departmentId,p.order_qty shipmentQty,
 		       p.item_id itemId,i.item_code itemCode,p.selected_vendor_id vendorId,
 		       p.status procurementStatus,
 		       COALESCE(p.unit_price,q.unit_price,0) supplyPrice,
 		       CASE WHEN p.received_at IS NULL AND COALESCE(p.received_qty,0)=0 THEN 0 ELSE 1 END alreadyReceived
 		FROM procurement p JOIN item i ON i.item_id=p.item_id
+		LEFT JOIN material_request mr ON mr.request_id=p.material_request_id
 		LEFT JOIN vendor_quote q ON q.quote_id=(SELECT MAX(vq.quote_id) FROM vendor_quote vq WHERE vq.procurement_id=p.procurement_id)
 		WHERE p.procurement_id=#{shipmentId} FOR UPDATE
 	</select>
@@ -244,7 +245,7 @@
 		SELECT #{departmentId},i.item_id,0,NOW()
 		FROM item i
 		WHERE i.item_id=#{itemId} AND i.active=1 AND i.item_type='MATERIAL'
-		ON DUPLICATE KEY UPDATE updated_at=updated_at
+		ON DUPLICATE KEY UPDATE inventory.updated_at=inventory.updated_at
 	</insert>
 
 	<update id="adjustInventory">

@@ -492,8 +492,9 @@
         FROM procurement p
         INNER JOIN item i ON i.item_id = p.item_id
         INNER JOIN vendor v ON v.vendor_id = p.selected_vendor_id
+        LEFT JOIN material_request mr ON mr.request_id = p.material_request_id
         LEFT JOIN inventory inv
-          ON inv.department_id = p.department_id
+          ON inv.department_id = COALESCE(mr.department_id, p.department_id)
          AND inv.item_id = p.item_id
         <where>
             AND (p.status IN (
@@ -525,7 +526,9 @@
           AND EXISTS (
               SELECT 1
               FROM inventory inv
-              WHERE inv.department_id = procurement.department_id
+              WHERE inv.department_id = COALESCE(
+                  (SELECT mr.department_id FROM material_request mr WHERE mr.request_id = procurement.material_request_id),
+                  procurement.department_id)
                 AND inv.item_id = procurement.item_id
           )
           AND COALESCE((
