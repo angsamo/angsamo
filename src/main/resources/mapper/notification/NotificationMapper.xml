@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.angsamo.erp.common.notification.NotificationMapper">
+	<select id="findRequestedMaterialRequests" resultType="com.angsamo.erp.common.notification.NotificationRow">
+		SELECT mr.request_id AS id, i.item_name, mr.created_at AS occurred_at
+		FROM material_request mr
+		JOIN item i ON i.item_id = mr.item_id
+		WHERE mr.status = 'REQUESTED'
+		AND mr.created_at >= DATE_SUB(NOW(), INTERVAL #{hours} HOUR)
+		ORDER BY mr.created_at DESC
+	</select>
+	<select id="findShortageMaterialRequests" resultType="com.angsamo.erp.common.notification.NotificationRow">
+		SELECT mr.request_id AS id, i.item_name, mr.updated_at AS occurred_at
+		FROM material_request mr
+		JOIN item i ON i.item_id = mr.item_id
+		WHERE mr.status = 'SHORTAGE'
+		AND mr.updated_at >= DATE_SUB(NOW(), INTERVAL #{hours} HOUR)
+		ORDER BY mr.updated_at DESC
+	</select>
+	<select id="findSubmittedQuotes" resultType="com.angsamo.erp.common.notification.NotificationRow">
+		SELECT vq.quote_id AS id, i.item_name, vq.submitted_at AS occurred_at
+		FROM vendor_quote vq
+		JOIN procurement p ON p.procurement_id = vq.procurement_id
+		JOIN item i ON i.item_id = p.item_id
+		WHERE vq.status = 'SUBMITTED'
+		AND vq.submitted_at >= DATE_SUB(NOW(), INTERVAL #{hours} HOUR)
+		ORDER BY vq.submitted_at DESC
+	</select>
+	<select id="findVendorQuoteRequests" resultType="com.angsamo.erp.common.notification.NotificationRow">
+		SELECT vq.quote_id AS id, i.item_name, vq.created_at AS occurred_at
+		FROM vendor_quote vq
+		JOIN procurement p ON p.procurement_id = vq.procurement_id
+		JOIN item i ON i.item_id = p.item_id
+		WHERE vq.vendor_id = #{vendorId}
+		AND vq.status = 'REQUESTED'
+		AND vq.created_at >= DATE_SUB(NOW(), INTERVAL #{hours} HOUR)
+		ORDER BY vq.created_at DESC
+	</select>
+	<select id="findVendorOrders" resultType="com.angsamo.erp.common.notification.NotificationRow">
+		SELECT p.procurement_id AS id, i.item_name, p.ordered_at AS occurred_at
+		FROM procurement p
+		JOIN item i ON i.item_id = p.item_id
+		WHERE p.selected_vendor_id = #{vendorId}
+		AND p.status = 'ORDERED'
+		AND p.ordered_at >= DATE_SUB(NOW(), INTERVAL #{hours} HOUR)
+		ORDER BY p.ordered_at DESC
+	</select>
+	<select id="findShippedProcurements" resultType="com.angsamo.erp.common.notification.NotificationRow">
+		SELECT p.procurement_id AS id, i.item_name, p.shipped_at AS occurred_at
+		FROM procurement p
+		JOIN item i ON i.item_id = p.item_id
+		WHERE p.status = 'SHIPPED'
+		AND p.shipped_at >= DATE_SUB(NOW(), INTERVAL #{hours} HOUR)
+		ORDER BY p.shipped_at DESC
+	</select>
+	<select id="findIssuedMaterialRequests" resultType="com.angsamo.erp.common.notification.NotificationRow">
+		SELECT mr.request_id AS id, i.item_name, mr.issued_at AS occurred_at
+		FROM material_request mr
+		JOIN item i ON i.item_id = mr.item_id
+		WHERE mr.department_id = #{departmentId}
+		AND mr.status = 'ISSUED'
+		AND mr.issued_at >= DATE_SUB(NOW(), INTERVAL #{hours} HOUR)
+		ORDER BY mr.issued_at DESC
+	</select>
+</mapper>

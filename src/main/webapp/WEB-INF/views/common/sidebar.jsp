@@ -28,7 +28,7 @@
 				<span class="nav-arrow material-symbols-outlined">chevron_right</span>
 			</a>
 			<div class="submenu">
-				<a href="${pageContext.request.contextPath}/admin/users">전체 현황</a>
+				<a href="${pageContext.request.contextPath}/">전체 현황</a>
 				<a href="${pageContext.request.contextPath}/admin/users">사용자 관리</a>
 				<a href="${pageContext.request.contextPath}/admin/departments">부서 관리</a>
 				<a href="${pageContext.request.contextPath}/admin/vendors">협력회사 관리</a>
@@ -86,6 +86,7 @@
 				<a href="${pageContext.request.contextPath}/purchase/progress">진척 관리</a>
 				<a href="${pageContext.request.contextPath}/purchase/receivings">입고 연계</a>
 				<a href="${pageContext.request.contextPath}/purchase/shortages">연계 조회</a>
+				<a href="${pageContext.request.contextPath}/purchase/vendors">협력회사 관리</a>
 			</div>
 		</div>
 		</c:if>
@@ -121,6 +122,7 @@
 				<a href="${pageContext.request.contextPath}/vendor/contracts">계약 관리</a>
 				<a href="${pageContext.request.contextPath}/vendor/orders">발주 관리</a>
 				<a href="${pageContext.request.contextPath}/vendor/shipments">제작·출하</a>
+				<a href="${pageContext.request.contextPath}/vendor/inspections">검수 관리</a>
 				<a href="${pageContext.request.contextPath}/vendor/returns">보완·반품</a>
 				<a href="${pageContext.request.contextPath}/vendor/statements">거래명세서</a>
 			</div>

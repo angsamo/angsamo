@@ -48,7 +48,20 @@ public class AdminDepartmentController {
 		model.addAttribute("department", department);
 		model.addAttribute("users", adminUserService.getUsers().stream()
 				.filter(user -> departmentId.equals(user.getDepartmentId())).toList());
+		model.addAttribute("departments", adminDepartmentService.getDepartments());
 		return "admin/department-detail";
+	}
+
+	@PostMapping("/admin/departments/{departmentId}/members/{userId}/move")
+	public String moveMember(@PathVariable Long departmentId, @PathVariable Long userId,
+			@RequestParam Long targetDepartmentId, RedirectAttributes redirect) {
+		try {
+			adminUserService.moveDepartment(userId, targetDepartmentId);
+			redirect.addFlashAttribute("success", "사용자를 이동했습니다.");
+		} catch (IllegalArgumentException e) {
+			redirect.addFlashAttribute("error", e.getMessage());
+		}
+		return "redirect:/admin/departments/" + departmentId;
 	}
 
 	@PostMapping("/admin/departments")
