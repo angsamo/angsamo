@@ -20,4 +20,5 @@ public interface AdminUserMapper {
 	void update(@Param("userId") Long userId, @Param("form") UserForm form,
 			@Param("encodedPassword") String encodedPassword);
 	void deactivate(Long userId);
+	void updateDepartment(@Param("userId") Long userId, @Param("departmentId") Long departmentId);
 }

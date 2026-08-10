@@ -80,4 +80,7 @@
 	<update id="deactivate">
 		UPDATE app_user SET active = 0 WHERE user_id = #{userId}
 	</update>
+	<update id="updateDepartment">
+		UPDATE app_user SET department_id = #{departmentId} WHERE user_id = #{userId}
+	</update>
 </mapper>

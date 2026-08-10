@@ -42,6 +42,27 @@
 		WHERE p.board_id = #{boardId}
 		ORDER BY p.post_id DESC
 	</select>
+	<select id="findByBoardIdPage" resultType="com.angsamo.erp.board.dto.BoardPostListItem">
+		<include refid="selectColumns"/>
+		<where>
+			p.board_id = #{boardId}
+			<if test="active != null">AND p.active = #{active}</if>
+		</where>
+		ORDER BY p.post_id DESC
+		LIMIT #{size} OFFSET #{offset}
+	</select>
+	<select id="countByBoardId" resultType="long">
+		SELECT COUNT(*) FROM board_post p
+		<where>
+			p.board_id = #{boardId}
+			<if test="active != null">AND p.active = #{active}</if>
+		</where>
+	</select>
+	<select id="findByAuthorId" resultType="com.angsamo.erp.board.dto.BoardPostListItem">
+		<include refid="selectColumns"/>
+		WHERE p.author_id = #{authorId}
+		ORDER BY p.post_id DESC
+	</select>
 	<select id="findById" resultType="com.angsamo.erp.board.dto.BoardPostListItem">
 		<include refid="selectColumns"/>
 		WHERE p.post_id = #{postId}

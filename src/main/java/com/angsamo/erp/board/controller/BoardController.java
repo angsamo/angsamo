@@ -8,6 +8,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -40,12 +41,25 @@ public class BoardController {
 	}
 
 	@GetMapping("/boards/{boardId}")
-	public String posts(@PathVariable Long boardId, HttpSession session, Model model) {
+	public String posts(@PathVariable Long boardId, @RequestParam(required = false) Integer page,
+			HttpSession session, Model model) {
+		LoginUser loginUser = requireLogin(session);
+		BoardListItem board = requireVisible(boardId, loginUser);
+		var result = boardPostService.getActivePosts(boardId, page);
+		model.addAttribute("board", board);
+		model.addAttribute("posts", result.getItems());
+		model.addAttribute("page", result.getPage());
+		model.addAttribute("totalPages", result.getTotalPages());
+		model.addAttribute("baseUrl", "/boards/" + boardId);
+		return "board/post-list";
+	}
+
+	@GetMapping("/boards/{boardId}/posts/new")
+	public String newPostForm(@PathVariable Long boardId, HttpSession session, Model model) {
 		LoginUser loginUser = requireLogin(session);
 		BoardListItem board = requireVisible(boardId, loginUser);
 		model.addAttribute("board", board);
-		model.addAttribute("posts", boardPostService.getActivePosts(boardId));
-		return "board/post-list";
+		return "board/post-form";
 	}
 
 	@GetMapping("/boards/{boardId}/posts/{postId}")

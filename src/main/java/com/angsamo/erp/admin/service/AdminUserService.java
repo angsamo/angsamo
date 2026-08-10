@@ -84,6 +84,17 @@ public class AdminUserService {
 		adminUserMapper.deactivate(userId);
 	}
 
+	@Transactional
+	public void moveDepartment(Long userId, Long targetDepartmentId) {
+		UserListItem user = adminUserMapper.findById(userId);
+		if (user == null) throw new IllegalArgumentException("사용자를 찾을 수 없습니다.");
+		if ("VENDOR".equals(user.getRole())) {
+			throw new IllegalArgumentException("협력회사 계정은 부서로 이동할 수 없습니다.");
+		}
+		if (targetDepartmentId == null) throw new IllegalArgumentException("이동할 부서를 선택하세요.");
+		adminUserMapper.updateDepartment(userId, targetDepartmentId);
+	}
+
 	private void validate(UserForm form, boolean creating) {
 		if (form.getDepartmentId() != null && form.getVendorId() != null) {
 			throw new IllegalArgumentException("\uBD80\uC11C\uC640 \uD611\uB825\uD68C\uC0AC\uB294 \uB458 \uC911 \uD558\uB098\uB9CC \uC120\uD0DD\uD558\uC138\uC694.");

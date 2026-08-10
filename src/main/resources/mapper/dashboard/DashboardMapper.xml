@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.angsamo.erp.common.dashboard.DashboardMapper">
+	<select id="countUsers" resultType="long">
+		SELECT COUNT(*) FROM app_user
+	</select>
+	<select id="countUsersByActive" resultType="long">
+		SELECT COUNT(*) FROM app_user WHERE active = #{active}
+	</select>
+	<select id="findUsersByDepartment" resultType="com.angsamo.erp.common.dashboard.DepartmentUserCount">
+		SELECT d.department_code, d.department_name, COUNT(u.user_id) AS user_count
+		FROM department d
+		LEFT JOIN app_user u ON u.department_id = d.department_id AND u.active = 1
+		GROUP BY d.department_id, d.department_code, d.department_name
+		ORDER BY d.department_id
+	</select>
+	<select id="findProductionPlanCountsByStatus" resultType="com.angsamo.erp.common.dashboard.StatusCount">
+		SELECT status, COUNT(*) AS count
+		FROM production_plan
+		GROUP BY status
+	</select>
+	<select id="findRecentProductionPlans" resultType="com.angsamo.erp.common.dashboard.RecentProductionPlan">
+		SELECT i.item_name, pp.production_qty, pp.status, pp.due_date
+		FROM production_plan pp
+		JOIN item i ON i.item_id = pp.item_id
+		ORDER BY pp.created_at DESC
+		LIMIT 5
+	</select>
+	<select id="findMaterialRequestCountsByStatus" resultType="com.angsamo.erp.common.dashboard.StatusCount">
+		SELECT status, COUNT(*) AS count
+		FROM material_request
+		GROUP BY status
+	</select>
+	<select id="findRecentStockMovements" resultType="com.angsamo.erp.common.dashboard.RecentStockMovement">
+		SELECT i.item_name, sm.movement_type, sm.quantity, sm.created_at
+		FROM stock_movement sm
+		JOIN item i ON i.item_id = sm.item_id
+		ORDER BY sm.created_at DESC
+		LIMIT 5
+	</select>
+	<select id="findProcurementCountsByStatus" resultType="com.angsamo.erp.common.dashboard.StatusCount">
+		SELECT status, COUNT(*) AS count
+		FROM procurement
+		GROUP BY status
+	</select>
+	<select id="findRecentProcurements" resultType="com.angsamo.erp.common.dashboard.RecentProcurement">
+		SELECT i.item_name, p.request_qty, p.status, p.required_date
+		FROM procurement p
+		JOIN item i ON i.item_id = p.item_id
+		ORDER BY p.created_at DESC
+		LIMIT 5
+	</select>
+	<select id="countPendingQuotes" resultType="long">
+		SELECT COUNT(*) FROM vendor_quote WHERE status = 'REQUESTED'
+	</select>
+	<select id="findRecentPosts" resultType="com.angsamo.erp.common.dashboard.RecentPost">
+		SELECT p.board_id, p.post_id, b.board_name, p.title, p.created_at
+		FROM board_post p
+		JOIN board b ON b.board_id = p.board_id
+		WHERE p.active = 1
+		ORDER BY p.created_at DESC
+		LIMIT 5
+	</select>
+</mapper>

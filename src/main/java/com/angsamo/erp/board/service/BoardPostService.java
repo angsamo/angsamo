@@ -51,6 +51,11 @@ public class BoardPostService {
 	}
 
 	@Transactional(readOnly = true)
+	public List<BoardPostListItem> getPostsByAuthor(Long authorId) {
+		return boardPostMapper.findByAuthorId(authorId);
+	}
+
+	@Transactional(readOnly = true)
 	public BoardPostListItem getPost(Long postId) {
 		return boardPostMapper.findById(postId);
 	}
@@ -104,6 +109,15 @@ public class BoardPostService {
 		return boardPostMapper.findByBoardId(boardId).stream()
 				.filter(post -> Boolean.TRUE.equals(post.getActive()))
 				.toList();
+	}
+
+	@Transactional(readOnly = true)
+	public PageResult<BoardPostListItem> getActivePosts(Long boardId, Integer page) {
+		PageRequest pageRequest = new PageRequest(page, PAGE_SIZE);
+		List<BoardPostListItem> items = boardPostMapper.findByBoardIdPage(boardId, pageRequest.getOffset(),
+				pageRequest.getSize(), true);
+		long totalCount = boardPostMapper.countByBoardId(boardId, true);
+		return new PageResult<>(items, pageRequest.getPage(), pageRequest.getSize(), totalCount);
 	}
 
 	@Transactional

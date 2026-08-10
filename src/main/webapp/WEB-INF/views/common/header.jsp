@@ -11,13 +11,29 @@
 		</div>
 	</div>
 	<div class="topbar-actions">
-		<button class="icon-button notification-button" type="button" aria-label="알림">
-			<span class="material-symbols-outlined">notifications</span>
-			<i></i>
-		</button>
-		<button class="icon-button" type="button" aria-label="설정">
+		<div class="notification-wrap">
+			<button class="icon-button notification-button" id="notificationButton" type="button" aria-label="알림">
+				<span class="material-symbols-outlined">notifications</span>
+				<c:if test="${notificationCount > 0}"><i></i></c:if>
+			</button>
+			<div class="notification-panel" id="notificationPanel">
+				<p class="notification-panel-title">최근 24시간 내 할 일</p>
+				<c:choose>
+					<c:when test="${empty notifications}"><p class="notification-empty">새로운 알림이 없습니다.</p></c:when>
+					<c:otherwise>
+						<c:forEach var="n" items="${notifications}">
+							<a class="notification-item" href="${pageContext.request.contextPath}${n.link}">
+								<span><c:out value="${n.message}"/></span>
+								<time><c:out value="${n.occurredAtLabel}"/></time>
+							</a>
+						</c:forEach>
+					</c:otherwise>
+				</c:choose>
+			</div>
+		</div>
+		<a class="icon-button" href="${pageContext.request.contextPath}/mypage" aria-label="설정">
 			<span class="material-symbols-outlined">settings</span>
-		</button>
+		</a>
 		<div class="profile">
 			<div>
 				<strong><c:out value="${sessionScope.loginUser.userName}" default="로그인 사용자" /></strong>

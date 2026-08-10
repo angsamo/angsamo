@@ -14,6 +14,10 @@ public interface BoardPostMapper {
 	List<BoardPostListItem> findPage(@Param("offset") int offset, @Param("size") int size, @Param("active") Boolean active);
 	long count(@Param("active") Boolean active);
 	List<BoardPostListItem> findByBoardId(Long boardId);
+	List<BoardPostListItem> findByBoardIdPage(@Param("boardId") Long boardId, @Param("offset") int offset,
+			@Param("size") int size, @Param("active") Boolean active);
+	long countByBoardId(@Param("boardId") Long boardId, @Param("active") Boolean active);
+	List<BoardPostListItem> findByAuthorId(Long authorId);
 	BoardPostListItem findById(Long postId);
 	void insert(@Param("form") BoardPostForm form, @Param("authorId") Long authorId);
 	void update(@Param("postId") Long postId, @Param("form") BoardPostForm form);
