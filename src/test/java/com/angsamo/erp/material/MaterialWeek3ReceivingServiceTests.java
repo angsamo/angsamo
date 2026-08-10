@@ -91,6 +91,31 @@ class MaterialWeek3ReceivingServiceTests {
                 "PROCUREMENT", 11L, 7L, null);
     }
 
+    @Test
+    void returnStatusCanOnlyMoveToTheNextAllowedStep() {
+        Map<String, Object> row = new HashMap<>();
+        row.put("status", "RETURN_REQUESTED");
+        row.put("returnQty", 5);
+        when(mapper.lockReturn(11L)).thenReturn(row);
+        when(mapper.updateReturnStatus(11L, "RETURN_REQUESTED", "RESUPPLYING")).thenReturn(1);
+
+        service.changeReturnStatus(11L, "RESUPPLYING");
+
+        verify(mapper).updateReturnStatus(11L, "RETURN_REQUESTED", "RESUPPLYING");
+    }
+
+    @Test
+    void returnStatusCannotSkipWorkflowSteps() {
+        Map<String, Object> row = new HashMap<>();
+        row.put("status", "RETURN_REQUESTED");
+        row.put("returnQty", 5);
+        when(mapper.lockReturn(11L)).thenReturn(row);
+
+        assertThrows(IllegalStateException.class,
+                () -> service.changeReturnStatus(11L, "RETURN_COMPLETED"));
+        verify(mapper, never()).updateReturnStatus(11L, "RETURN_REQUESTED", "RETURN_COMPLETED");
+    }
+
     private Map<String, Object> shipment(String status, int qty) {
         Map<String, Object> row = new HashMap<>();
         row.put("procurementStatus", status); row.put("alreadyReceived", 0);
