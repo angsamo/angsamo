@@ -2,7 +2,9 @@ package com.angsamo.erp.safety.service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -37,16 +39,37 @@ public class WeatherService {
     @Value("${kma.stn}")
     private String stn;
 
+    @Value("${kma.warning-region:}")
+    private String warningRegion;
+
+    @Value("${kma.warning-region-name:서울특별시}")
+    private String warningRegionName;
+
+    @Value("${weather.latitude:37.5665}")
+    private double latitude;
+
+    @Value("${weather.longitude:126.9780}")
+    private double longitude;
+
     public WeatherService(WeatherAlertMapper weatherAlertMapper) {
         this.weatherAlertMapper = weatherAlertMapper;
     }
 
     @Transactional
     public WeatherStatus getStatus() {
-        if (apiKey == null || apiKey.isBlank()) {
-            return new WeatherStatus("-", "-", "-", List.of(), List.of(), List.of(), "안전");
+        if (apiKey != null && !apiKey.isBlank()) {
+            WeatherStatus kmaStatus = readKmaStatus();
+            if (kmaStatus != null) return kmaStatus;
         }
+
+        return readOpenMeteoStatus();
+    }
+
+    /** 인증키가 설정된 경우 기상청 API허브의 관측·예보를 우선 사용한다. */
+    private WeatherStatus readKmaStatus() {
         Map<String, String> observed = readObservation();
+        if (observed.isEmpty()) return null;
+
         List<WeatherAlert> alerts = readAlerts();
         for (WeatherAlert alert : alerts) {
             weatherAlertMapper.insertIfAbsent(alert.getType(), alert.getLevel(),
@@ -61,7 +84,70 @@ public class WeatherService {
                 alerts,
                 readHourlyForecast(),
                 readDailyForecast(),
-                calculateRiskLevel(temperature, precipitation, alerts));
+                calculateRiskLevel(temperature, precipitation, alerts),
+                "기상청 API허브",
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")),
+                "기상청 실시간 관측 및 예보 데이터입니다.");
+    }
+
+    /**
+     * 기상청 키가 없거나 일시적으로 호출되지 않을 때 화면이 비지 않도록 공개 실시간 날씨 API를 사용한다.
+     * DB에는 아무 데이터도 생성하지 않으며 서울 좌표는 설정값으로 교체할 수 있다.
+     */
+    @SuppressWarnings("unchecked")
+    private WeatherStatus readOpenMeteoStatus() {
+        try {
+            String uri = "https://api.open-meteo.com/v1/forecast?latitude=" + latitude
+                    + "&longitude=" + longitude
+                    + "&current=temperature_2m,precipitation"
+                    + "&hourly=temperature_2m&daily=temperature_2m_max"
+                    + "&forecast_hours=12&forecast_days=5&timezone=Asia%2FSeoul";
+            Map<String, Object> response = restClient.get().uri(uri).retrieve().body(Map.class);
+            Map<String, Object> current = (Map<String, Object>) response.get("current");
+            Map<String, Object> hourly = (Map<String, Object>) response.get("hourly");
+            Map<String, Object> daily = (Map<String, Object>) response.get("daily");
+            if (current == null) throw new IllegalStateException("현재 날씨 응답이 없습니다.");
+
+            String temperature = value(current.get("temperature_2m"));
+            String precipitation = value(current.get("precipitation"));
+            List<ForecastPoint> hourlyPoints = forecastPoints(hourly, "time", "temperature_2m", true);
+            List<ForecastPoint> dailyPoints = forecastPoints(daily, "time", "temperature_2m_max", false);
+            String observedAt = String.valueOf(current.getOrDefault("time", "-")).replace('T', ' ');
+            String message = apiKey == null || apiKey.isBlank()
+                    ? "기상청 인증키가 설정되지 않아 공개 실시간 날씨 데이터로 표시합니다."
+                    : "기상청 API 연결 실패로 공개 실시간 날씨 데이터로 대체했습니다.";
+
+            return new WeatherStatus(temperature, precipitation, temperature, List.of(),
+                    hourlyPoints, dailyPoints, calculateRiskLevel(temperature, precipitation, List.of()),
+                    "Open-Meteo 실시간", observedAt, message);
+        } catch (Exception e) {
+            return new WeatherStatus("-", "-", "-", List.of(), List.of(), List.of(), "확인 필요",
+                    "연결 실패", "-", "실시간 날씨 서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.");
+        }
+    }
+
+    private List<ForecastPoint> forecastPoints(Map<String, Object> block, String timeKey,
+            String valueKey, boolean hourly) {
+        if (block == null) return List.of();
+        Object timesValue = block.get(timeKey);
+        Object valuesValue = block.get(valueKey);
+        if (!(timesValue instanceof List<?> times) || !(valuesValue instanceof List<?> values)) return List.of();
+
+        List<ForecastPoint> points = new ArrayList<>();
+        int size = Math.min(times.size(), values.size());
+        for (int index = 0; index < size; index++) {
+            String time = String.valueOf(times.get(index));
+            String label;
+            if (hourly && time.length() >= 13) label = time.substring(11, 13) + "시";
+            else if (!hourly && time.length() >= 10) label = time.substring(5, 7) + "/" + time.substring(8, 10);
+            else label = time;
+            points.add(new ForecastPoint(label, value(values.get(index))));
+        }
+        return points;
+    }
+
+    private String value(Object value) {
+        return value == null ? "-" : String.valueOf(value);
     }
 
     // 규칙 기반 종합 위험도 판정: 폭염/한파/특보 경보 수준을 기준으로 안전/주의/위험 3단계를 산출한다. (ML 모델 도입 전까지의 임시 로직)
@@ -121,24 +207,80 @@ public class WeatherService {
     private List<WeatherAlert> readAlerts() {
         try {
             String response = restClient.get()
-                    .uri("https://apihub.kma.go.kr/api/typ01/url/wrn_now_data.php?fe=f&tm=&disp=1&authKey=" + apiKey)
+                    .uri("https://apihub.kma.go.kr/api/typ01/url/wrn_now_data.php?fe=f&tm=&disp=0&help=0&authKey=" + apiKey)
                     .retrieve()
                     .body(String.class);
 
-            List<WeatherAlert> alerts = new ArrayList<>();
-            if (response == null) return alerts;
+            Map<String, WeatherAlert> alerts = new LinkedHashMap<>();
+            if (response == null) return List.of();
             for (String line : response.split("\n")) {
                 if (line.isBlank() || line.startsWith("#")) continue;
-                String[] cols = line.split(",");
-                if (cols.length < 6) continue;
-                String regionKo = cols[1].trim();
-                String warn = cols[4].trim();
-                String level = cols[5].trim();
-                alerts.add(new WeatherAlert(warn, level, regionKo));
+                String[] cols = line.split(",", -1);
+                // REG_UP, REG_UP_KO, REG_ID, REG_KO, TM_FC, TM_EF, WRN, LVL, CMD
+                if (cols.length < 9) continue;
+                String upperRegion = cols[1].trim();
+                String regionId = cols[2].trim();
+                String regionKo = cols[3].trim();
+                String effectiveAt = cols[5].trim();
+                String warn = alertType(cols[6].trim());
+                String level = alertLevel(cols[7].trim());
+                String command = cols[8].trim();
+                if ("3".equals(command) || "4".equals(command)
+                        || "해제".equals(command) || "대치해제".equals(command)) continue;
+                if (!isTargetRegion(regionId, upperRegion, regionKo)) continue;
+
+                WeatherAlert alert = new WeatherAlert(warn, level, regionKo, formatKmaTime(effectiveAt));
+                alerts.putIfAbsent(warn + "|" + level + "|" + regionKo, alert);
             }
-            return alerts;
+            return new ArrayList<>(alerts.values());
         } catch (Exception e) {
             return List.of();
+        }
+    }
+
+    private boolean isTargetRegion(String regionId, String upperRegion, String regionName) {
+        boolean idMatches = warningRegion != null && !warningRegion.isBlank()
+                && regionId.equalsIgnoreCase(warningRegion.trim());
+        boolean nameMatches = warningRegionName != null && !warningRegionName.isBlank()
+                && (regionName.contains(warningRegionName.trim()) || upperRegion.contains(warningRegionName.trim()));
+        return idMatches || nameMatches;
+    }
+
+    private String alertLevel(String code) {
+        return switch (code) {
+            case "1", "예비특보" -> "예비특보";
+            case "2", "주의보" -> "주의보";
+            case "3", "경보" -> "경보";
+            default -> "특보";
+        };
+    }
+
+    private String alertType(String value) {
+        return switch (value) {
+            case "강풍" -> "W";
+            case "호우" -> "R";
+            case "한파" -> "C";
+            case "건조" -> "D";
+            case "폭풍해일", "해일" -> "O";
+            case "지진해일" -> "N";
+            case "풍랑" -> "V";
+            case "태풍" -> "T";
+            case "대설" -> "S";
+            case "황사" -> "Y";
+            case "폭염" -> "H";
+            case "안개" -> "F";
+            case "열대야" -> "K";
+            default -> value;
+        };
+    }
+
+    private String formatKmaTime(String value) {
+        if (value == null || value.length() != 12) return value;
+        try {
+            return LocalDateTime.parse(value, DateTimeFormatter.ofPattern("yyyyMMddHHmm"))
+                    .format(DateTimeFormatter.ofPattern("MM월 dd일 HH:mm"));
+        } catch (DateTimeParseException e) {
+            return value;
         }
     }
 
@@ -164,7 +306,8 @@ public class WeatherService {
 
             List<ForecastPoint> points = new ArrayList<>();
             for (Map<String, Object> item : items) {
-                if (!"TMP".equals(item.get("category"))) continue;
+                // 초단기예보의 시간별 기온 항목은 T1H이다. TMP는 단기예보 항목이다.
+                if (!"T1H".equals(item.get("category"))) continue;
                 String timeLabel = String.valueOf(item.get("fcstTime"));
                 points.add(new ForecastPoint(timeLabel.substring(0, 2) + "시", String.valueOf(item.get("fcstValue"))));
             }
