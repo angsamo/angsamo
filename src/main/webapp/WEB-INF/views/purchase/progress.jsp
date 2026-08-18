@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="my" tagdir="/WEB-INF/tags" %>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -27,12 +28,12 @@
             <td><c:out value="${row.vendorName}" /></td>
             <td><fmt:formatNumber value="${row.orderQty}" /> <c:out value="${row.unit}" /></td>
             <td>${row.requiredDate}</td>
-            <td><span class="state-badge enabled"><c:out value="${row.status}" /></span></td>
+            <td><my:procurementStatus status="${row.status}" /></td>
             <td><c:out value="${row.makeProgress}" default="미등록" /></td>
             <td><c:out value="${row.deliveryProgress}" default="미등록" /></td>
             <td><c:choose><c:when test="${not empty row.deliveryProgressRate}">${row.deliveryProgressRate}%</c:when><c:otherwise>-</c:otherwise></c:choose></td>
             <td><small class="purchase-date-stack"><span>발주</span>${row.orderedAt}<br><span>출하</span><c:out value="${row.shippedAt}" default="-"/><br><span>입고</span><c:out value="${row.receivedAt}" default="-"/></small></td>
-            <td><c:out value="${row.inspectionResult}" default="검수 대기" /></td>
+            <td><my:inspectionResult result="${row.inspectionResult}" /></td>
             <td><a class="purchase-action-button" href="${pageContext.request.contextPath}/purchase/procurements/${row.procurementId}">확인</a></td>
         </tr></c:forEach>
         <c:if test="${empty progressList}"><tr><td colspan="12" class="empty-cell">진행 중인 구매 발주가 없습니다.</td></tr></c:if>

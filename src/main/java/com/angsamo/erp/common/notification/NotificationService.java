@@ -27,23 +27,22 @@ public class NotificationService {
 		List<NotificationItem> items = new ArrayList<>();
 		String role = loginUser.getRole();
 		String departmentCode = loginUser.getDepartmentCode();
-		boolean isAdmin = "ADMIN".equals(role);
 
-		if (isAdmin || "MATERIAL".equals(departmentCode)) {
+		if ("MATERIAL".equals(departmentCode)) {
 			add(items, notificationMapper.findRequestedMaterialRequests(WINDOW_HOURS),
 					"자재요청 승인 대기", "/material/issues");
 			add(items, notificationMapper.findShippedProcurements(WINDOW_HOURS),
 					"입고검사 대기", "/material/receivings");
 		}
 
-		if (isAdmin || "PURCHASE".equals(departmentCode)) {
+		if ("PURCHASE".equals(departmentCode)) {
 			add(items, notificationMapper.findShortageMaterialRequests(WINDOW_HOURS),
 					"부족 자재 조달 필요", "/purchase/shortages");
 			add(items, notificationMapper.findSubmittedQuotes(WINDOW_HOURS),
 					"협력업체 견적 제출됨", "/purchase/quotes");
 		}
 
-		if (isAdmin || "PRODUCTION".equals(departmentCode)) {
+		if ("PRODUCTION".equals(departmentCode)) {
 			add(items, notificationMapper.findIssuedMaterialRequests(loginUser.getDepartmentId(), WINDOW_HOURS),
 					"자재 불출 완료", "/production/material-requests");
 		}
@@ -53,6 +52,17 @@ public class NotificationService {
 					"신규 견적 요청", "/vendor/quotes");
 			add(items, notificationMapper.findVendorOrders(loginUser.getVendorId(), WINDOW_HOURS),
 					"발주 확정, 제작 시작 필요", "/vendor/orders");
+		}
+
+		if ("ADMIN".equals(role)) {
+			for (NotificationRow row : notificationMapper.findRecentWeatherAlerts(WINDOW_HOURS)) {
+				NotificationItem item = new NotificationItem();
+				item.setMessage(row.getItemName());
+				item.setLink("/safety");
+				item.setOccurredAt(row.getOccurredAt());
+				item.setOccurredAtLabel(row.getOccurredAt() == null ? null : row.getOccurredAt().format(TIME_LABEL_FORMAT));
+				items.add(item);
+			}
 		}
 
 		return items.stream()

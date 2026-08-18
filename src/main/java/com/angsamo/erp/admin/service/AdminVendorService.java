@@ -47,9 +47,11 @@ public class AdminVendorService {
 	}
 
 	@Transactional
-	public void update(Long vendorId, String vendorName) {
-		if (vendorName == null || vendorName.isBlank()) throw new IllegalArgumentException("\uD611\uB825\uD68C\uC0AC\uBA85\uC744 \uC785\uB825\uD558\uC138\uC694.");
-		mapper.update(vendorId, vendorName.trim());
+	public void update(Long vendorId, VendorItem vendor) {
+		if (vendor.getVendorName() == null || vendor.getVendorName().isBlank()) throw new IllegalArgumentException("\uD611\uB825\uD68C\uC0AC\uBA85\uC744 \uC785\uB825\uD558\uC138\uC694.");
+		vendor.setVendorName(vendor.getVendorName().trim());
+		if (vendor.getActive() == null) vendor.setActive(true);
+		mapper.update(vendorId, vendor);
 	}
 
 	private void normalize(VendorItem vendor) {

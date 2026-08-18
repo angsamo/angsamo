@@ -18,6 +18,7 @@ public class MaterialService {
 
     public MaterialService(MaterialMapper mapper) { this.mapper = mapper; }
 
+    @Transactional(readOnly = true) public com.angsamo.erp.material.dto.MaterialDashboardSummary dashboardSummary() { return mapper.findDashboardSummary(); }
     @Transactional(readOnly = true) public List<Map<String, Object>> purchaseOrders() { return mapper.findPurchaseOrders(); }
     @Transactional(readOnly = true) public List<Map<String, Object>> pendingShipments() { return mapper.findPendingShipments(); }
     @Transactional(readOnly = true) public List<Map<String, Object>> receivings() { return mapper.findReceivings(); }

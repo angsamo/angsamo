@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -66,7 +67,7 @@
 								<label><input type="checkbox" name="qualityChecked" value="true" required> 외관·규격·품질 상태를 검수했습니다.</label>
 							</fieldset>
 							<div class="inspection-inputs">
-								<label>입고 검사 수량<input type="number" name="receivedQty" min="1" max="${row.shipmentQty}" value="${row.shipmentQty}" required></label>
+								<label>입고 검사 수량<input type="number" name="receivedQty" min="1" max="${row.shipmentQty}" value="<fmt:formatNumber value='${row.shipmentQty}' maxFractionDigits='0' groupingUsed='false'/>" required></label>
 								<label>검사 결과<select name="inspectionResult" required><option value="ACCEPTED">정상 입고</option><option value="RETURNED">전체 반품</option></select></label>
 								<label class="reason-field">반품 사유<input type="text" name="reason" maxlength="500" placeholder="반품 선택 시 반드시 입력"></label>
 								<button class="action-button" type="submit">검수 완료 및 입고 마감</button>

@@ -7,10 +7,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class MyPageService {
 	private final MyPageMapper myPageMapper;
-	private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+	private final BCryptPasswordEncoder passwordEncoder;
 
-	public MyPageService(MyPageMapper myPageMapper) {
+	public MyPageService(MyPageMapper myPageMapper, BCryptPasswordEncoder passwordEncoder) {
 		this.myPageMapper = myPageMapper;
+		this.passwordEncoder = passwordEncoder;
 	}
 
 	@Transactional

@@ -22,6 +22,21 @@
 
 		<c:if test="${sessionScope.loginUser.role == 'ADMIN'}">
 		<div class="nav-group">
+			<a class="nav-link" href="${pageContext.request.contextPath}/safety">
+				<span class="material-symbols-outlined">health_and_safety</span>
+				<span>안전관리</span>
+				<span class="nav-arrow material-symbols-outlined">chevron_right</span>
+			</a>
+			<div class="submenu">
+				<a href="${pageContext.request.contextPath}/safety">전체 현황</a>
+				<a href="${pageContext.request.contextPath}/safety/weather">날씨</a>
+				<a href="${pageContext.request.contextPath}/safety/checklist">안전모 점검</a>
+			</div>
+		</div>
+		</c:if>
+
+		<c:if test="${sessionScope.loginUser.role == 'ADMIN'}">
+		<div class="nav-group">
 			<a class="nav-link" href="#">
 				<span class="material-symbols-outlined">admin_panel_settings</span>
 				<span>관리자</span>
@@ -61,7 +76,7 @@
 				<span class="nav-arrow material-symbols-outlined">chevron_right</span>
 			</a>
 			<div class="submenu">
-				<a href="#">생산 현황</a>
+				<a href="${pageContext.request.contextPath}/production">생산 현황</a>
 				<a href="${pageContext.request.contextPath}/production/plans">생산계획</a>
 				<a href="${pageContext.request.contextPath}/production/material-requirements">자재 소요량</a>
 				<a href="${pageContext.request.contextPath}/production/material-requests">불출 요청</a>

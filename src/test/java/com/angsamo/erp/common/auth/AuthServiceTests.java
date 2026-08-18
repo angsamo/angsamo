@@ -16,7 +16,7 @@ class AuthServiceTests {
 		account.setPassword(new BCryptPasswordEncoder().encode("secret"));
 		account.setUserName("관리자");
 		account.setRole("ADMIN");
-		AuthService service = new AuthService(loginId -> "admin".equals(loginId) ? account : null);
+		AuthService service = new AuthService(loginId -> "admin".equals(loginId) ? account : null, new BCryptPasswordEncoder());
 
 		assertNotNull(service.authenticate("admin", "secret"));
 		assertEquals(7L, service.authenticate("admin", "secret").getUserId());

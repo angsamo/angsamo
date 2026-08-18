@@ -17,10 +17,11 @@ public class AdminUserService {
 	public static final int PAGE_SIZE = 20;
 
 	private final AdminUserMapper adminUserMapper;
-	private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+	private final BCryptPasswordEncoder passwordEncoder;
 
-	public AdminUserService(AdminUserMapper adminUserMapper) {
+	public AdminUserService(AdminUserMapper adminUserMapper, BCryptPasswordEncoder passwordEncoder) {
 		this.adminUserMapper = adminUserMapper;
+		this.passwordEncoder = passwordEncoder;
 	}
 
 	@Transactional(readOnly = true)

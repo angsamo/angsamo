@@ -77,21 +77,28 @@ public class ProductionPlanService {
             );
         }
 
-        if (loginUser.getDepartmentId() == null) {
-            throw new IllegalStateException(
-                    "로그인 사용자의 부서 정보가 없습니다."
-            );
-        }
-
         if (loginUser.getUserId() == null) {
             throw new IllegalStateException(
                     "로그인 사용자 정보가 없습니다."
             );
         }
 
-        productionPlan.setDepartmentId(
-                loginUser.getDepartmentId()
-        );
+        Long departmentId = loginUser.getDepartmentId();
+        if (departmentId == null) {
+            if (!"ADMIN".equals(loginUser.getRole())) {
+                throw new IllegalStateException(
+                        "로그인 사용자의 부서 정보가 없습니다."
+                );
+            }
+            departmentId = productionPlanMapper.findDepartmentIdByCode("PRODUCTION");
+            if (departmentId == null) {
+                throw new IllegalStateException(
+                        "생산부서 정보를 찾을 수 없습니다."
+                );
+            }
+        }
+
+        productionPlan.setDepartmentId(departmentId);
 
         productionPlan.setCreatedBy(
                 loginUser.getUserId()

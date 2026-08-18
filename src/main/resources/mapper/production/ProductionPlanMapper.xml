@@ -140,4 +140,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         WHERE production_plan_id = #{productionPlanId}
     </update>
 
+    <select id="findDepartmentIdByCode" resultType="long">
+        SELECT department_id
+        FROM department
+        WHERE department_code = #{departmentCode}
+    </select>
+
 </mapper>

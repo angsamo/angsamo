@@ -11,6 +11,7 @@ import com.angsamo.erp.material.dto.StockMovementItem;
 
 @Mapper
 public interface MaterialMapper {
+	com.angsamo.erp.material.dto.MaterialDashboardSummary findDashboardSummary();
 	List<Map<String, Object>> findPurchaseOrders();
 	List<Map<String, Object>> findPendingShipments();
 	List<Map<String, Object>> findReceivings();

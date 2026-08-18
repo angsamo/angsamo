@@ -15,5 +15,5 @@ public interface AdminVendorMapper {
 	VendorItem findById(Long vendorId);
 	int countByCode(String vendorCode);
 	void insert(VendorItem vendor);
-	void update(@Param("vendorId") Long vendorId, @Param("vendorName") String vendorName);
+	void update(@Param("vendorId") Long vendorId, @Param("vendor") VendorItem vendor);
 }
