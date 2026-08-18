@@ -33,8 +33,8 @@
 		       CASE WHEN p.shipped_at IS NOT NULL AND p.shipped_at &lt;= p.required_date THEN 1 ELSE 0 END onTimeFlag,
 		       p.shipped_at shippedAt, p.required_date expectedArrivalDate,
 		       COALESCE(p.received_qty,0) previousAcceptedQty,
-		       COALESCE((SELECT SUM(CASE WHEN sm.movement_type='IN' THEN sm.quantity ELSE -sm.quantity END)
-		                 FROM stock_movement sm WHERE sm.item_id=p.item_id),0) currentAvailableQty,
+		       COALESCE((SELECT inv.current_qty FROM inventory inv
+		                 WHERE inv.item_id=p.item_id AND inv.department_id=p.department_id),0) currentAvailableQty,
 		       p.terms agreedTerms
 		FROM procurement p
 		JOIN item i ON i.item_id = p.item_id
@@ -56,13 +56,14 @@
 		       CASE WHEN p.inspection_result='REJECTED' THEN COALESCE(p.order_qty,0)
 		            WHEN p.inspection_result='PARTIAL' THEN GREATEST(COALESCE(p.order_qty,0)-COALESCE(p.received_qty,0),0)
 		            ELSE 0 END rejectedQty,
-		       CASE WHEN p.inspection_result IN ('REJECTED','PARTIAL') THEN p.terms END rejectionReason,
+		       CASE WHEN p.inspection_result IN ('RETURNED','REJECTED','PARTIAL')
+		            THEN COALESCE(NULLIF(SUBSTRING_INDEX(p.terms,'[반품사유] ',-1),p.terms),'검수 불합격') END rejectionReason,
 		       p.received_at inspectedAt,
 		       CASE WHEN p.status IN ('STATEMENT_ISSUED','CLOSED') THEN p.procurement_id END statementId,
 		       CASE WHEN p.status IN ('RETURN_REQUESTED','RESUPPLYING') THEN p.procurement_id END returnId,
 		       p.status returnStatus,
-		       COALESCE((SELECT SUM(CASE WHEN sm.movement_type='IN' THEN sm.quantity ELSE -sm.quantity END)
-		                 FROM stock_movement sm WHERE sm.item_id=p.item_id),0) availableQty
+		       COALESCE((SELECT inv.current_qty FROM inventory inv
+		                 WHERE inv.item_id=p.item_id AND inv.department_id=p.department_id),0) availableQty
 		FROM procurement p
 		JOIN item i ON i.item_id = p.item_id
 		LEFT JOIN vendor v ON v.vendor_id = p.selected_vendor_id
@@ -75,7 +76,9 @@
 		       p.selected_vendor_id vendorId, v.vendor_name vendorName,
 		       p.item_id itemId, i.item_code itemCode, i.item_name itemName,
 		       GREATEST(COALESCE(p.order_qty,0)-COALESCE(p.received_qty,0),0) returnQty,
-		       COALESCE(p.terms,'검수 불합격') returnReason, p.status,
+		       CASE WHEN p.terms LIKE '%[반품사유] %'
+		            THEN SUBSTRING_INDEX(p.terms,'[반품사유] ',-1)
+		            ELSE '검수 불합격' END returnReason, p.status,
 		       p.received_at requestedAt,
 		       CASE WHEN p.status='RETURN_COMPLETED' THEN p.updated_at END completedAt
 		FROM procurement p
@@ -157,11 +160,21 @@
 		SELECT i.item_code itemCode, i.item_name itemName, 0 baseQty,
 		       COALESCE(SUM(inv.current_qty),0) availableQty,
 		       COALESCE(SUM(inv.current_qty),0) calcQty,
-		       COALESCE((SELECT vq.unit_price FROM vendor_quote vq JOIN procurement px ON px.procurement_id=vq.procurement_id
-		                 WHERE px.item_id=i.item_id ORDER BY vq.created_at DESC LIMIT 1),0) unitPrice,
+		       COALESCE((SELECT COALESCE(px.unit_price,vq.unit_price)
+		                 FROM procurement px
+		                 LEFT JOIN vendor_quote vq ON vq.quote_id=(SELECT MAX(vq2.quote_id) FROM vendor_quote vq2
+		                     WHERE vq2.procurement_id=px.procurement_id
+		                       AND (px.selected_vendor_id IS NULL OR vq2.vendor_id=px.selected_vendor_id))
+		                 WHERE px.item_id=i.item_id AND COALESCE(px.received_qty,0)&gt;0
+		                 ORDER BY COALESCE(px.received_at,px.updated_at) DESC,px.procurement_id DESC LIMIT 1),0) unitPrice,
 		       COALESCE(SUM(inv.current_qty),0)
-		         * COALESCE((SELECT vq.unit_price FROM vendor_quote vq JOIN procurement px ON px.procurement_id=vq.procurement_id
-		                     WHERE px.item_id=i.item_id ORDER BY vq.created_at DESC LIMIT 1),0) stockValue,
+		         * COALESCE((SELECT COALESCE(px.unit_price,vq.unit_price)
+		                     FROM procurement px
+		                     LEFT JOIN vendor_quote vq ON vq.quote_id=(SELECT MAX(vq2.quote_id) FROM vendor_quote vq2
+		                         WHERE vq2.procurement_id=px.procurement_id
+		                           AND (px.selected_vendor_id IS NULL OR vq2.vendor_id=px.selected_vendor_id))
+		                     WHERE px.item_id=i.item_id AND COALESCE(px.received_qty,0)&gt;0
+		                     ORDER BY COALESCE(px.received_at,px.updated_at) DESC,px.procurement_id DESC LIMIT 1),0) stockValue,
 		       MAX(inv.updated_at) updatedAt,
 		       COALESCE((SELECT SUM(sm.quantity) FROM stock_movement sm
 		                 WHERE sm.item_id=i.item_id AND sm.movement_type='OUT'
@@ -177,7 +190,7 @@
 		SELECT p.procurement_id statementId, p.procurement_id receivingId, p.procurement_id poId,
 		       p.selected_vendor_id vendorId, v.vendor_name vendorName, i.item_name itemName,
 		       p.received_qty qty, COALESCE(p.unit_price,q.unit_price,0) supplyPrice,
-		       CASE WHEN p.status='CLOSED' THEN 1 ELSE 0 END isNotified,
+		       CASE WHEN p.status IN ('STATEMENT_ISSUED','CLOSED') THEN 1 ELSE 0 END isNotified,
 		       COALESCE(p.received_at,p.updated_at) createdAt
 		FROM procurement p JOIN item i ON i.item_id=p.item_id
 		LEFT JOIN vendor v ON v.vendor_id=p.selected_vendor_id
@@ -213,10 +226,11 @@
 		SELECT p.procurement_id statementId,COALESCE(p.received_at,p.updated_at) createdAt,
 		       p.received_qty qty,COALESCE(p.unit_price,q.unit_price,0) supplyPrice,
 		       p.received_qty*COALESCE(p.unit_price,q.unit_price,0) totalPrice,
-		       CASE WHEN p.status='CLOSED' THEN 1 ELSE 0 END isNotified,
+		       CASE WHEN p.status IN ('STATEMENT_ISSUED','CLOSED') THEN 1 ELSE 0 END isNotified,
 		       p.received_at inspectedAt,p.procurement_id poId,i.item_code itemCode,i.item_name itemName,
 		       v.vendor_id vendorId,v.vendor_name vendorName,'앙사모 ERP' orderCompanyInfo,
-		       v.vendor_name vendorInfo,COALESCE(p.terms,q.terms) agreedTerms
+		       v.vendor_name vendorInfo,
+		       SUBSTRING_INDEX(COALESCE(p.terms,q.terms),'\n[반품사유]',1) agreedTerms
 		FROM procurement p JOIN item i ON i.item_id=p.item_id
 		LEFT JOIN vendor v ON v.vendor_id=p.selected_vendor_id
 		LEFT JOIN vendor_quote q ON q.quote_id=(SELECT MAX(vq.quote_id) FROM vendor_quote vq WHERE vq.procurement_id=p.procurement_id)
@@ -314,7 +328,10 @@
 		SET received_qty=CASE WHEN #{result}='ACCEPTED' THEN #{acceptedQty} ELSE 0 END,
 		    received_at=CASE WHEN #{result}='ACCEPTED' THEN NOW() ELSE NULL END,
 		    inspection_result=#{result},
-		    terms=CASE WHEN #{result}='RETURNED' THEN NULLIF(#{reason},'') ELSE terms END,
+		    terms=CASE WHEN #{result}='RETURNED'
+		               THEN CONCAT(COALESCE(terms,''),CASE WHEN COALESCE(terms,'')='' THEN '' ELSE '\n' END,
+		                           '[반품사유] ',NULLIF(#{reason},''))
+		               ELSE terms END,
 		    status=CASE WHEN #{result}='ACCEPTED' THEN 'RECEIVED' ELSE 'RETURNED' END,
 		    updated_at=NOW()
 		WHERE procurement_id=#{procurementId} AND status='SHIPPED'
@@ -332,27 +349,29 @@
 	</update>
 
 	<update id="updateReturnStatus">
-		UPDATE procurement SET status=#{status} WHERE procurement_id=#{returnId}
+		UPDATE procurement SET status=#{status}, updated_at=NOW()
+		WHERE procurement_id=#{returnId} AND status=#{fromStatus}
 	</update>
 
 	<update id="requestReturn">
 		UPDATE procurement
-		SET status='RETURN_REQUESTED', terms=#{reason}, updated_at=NOW()
+		SET status='RETURN_REQUESTED', updated_at=NOW()
 		WHERE procurement_id=#{returnId} AND status='RETURNED'
 	</update>
 
 	<update id="issueStatement">
 		UPDATE procurement SET status='STATEMENT_ISSUED'
-		WHERE procurement_id=#{procurementId} AND received_qty&gt;0
+		WHERE procurement_id=#{procurementId} AND received_qty&gt;0 AND status='RECEIVED'
 	</update>
 
 	<update id="notifyStatement">
-		UPDATE procurement SET status='CLOSED'
-		WHERE procurement_id=#{statementId} AND status IN ('RECEIVED','STATEMENT_ISSUED')
+		UPDATE procurement SET updated_at=NOW()
+		WHERE procurement_id=#{statementId} AND status='STATEMENT_ISSUED'
 	</update>
 
 	<update id="closePurchaseOrder">
 		UPDATE procurement SET status='CLOSED'
 		WHERE procurement_id=#{poId} AND received_qty&gt;0
+		  AND status IN ('RECEIVED','STATEMENT_ISSUED')
 	</update>
 </mapper>
