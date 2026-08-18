@@ -50,7 +50,8 @@ public interface MaterialMapper {
 			@Param("memo") String memo);
 	int updateIssue(@Param("issueId") long issueId, @Param("qty") java.math.BigDecimal qty,
 			@Param("status") String status, @Param("userId") long userId);
-	int updateReturnStatus(@Param("returnId") long returnId, @Param("status") String status);
+	int updateReturnStatus(@Param("returnId") long returnId, @Param("fromStatus") String fromStatus,
+			@Param("status") String status);
 	int requestReturn(@Param("returnId") long returnId, @Param("reason") String reason);
 	int issueStatement(long procurementId);
 	int notifyStatement(long statementId);

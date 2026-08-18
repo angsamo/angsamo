@@ -13,7 +13,6 @@ import com.angsamo.erp.material.mapper.MaterialMapper;
 
 @Service
 public class MaterialService {
-    private static final List<String> RETURN_STATUSES = List.of("RETURN_REQUESTED", "RESUPPLYING", "RETURN_COMPLETED");
     private final MaterialMapper mapper;
 
     public MaterialService(MaterialMapper mapper) { this.mapper = mapper; }
@@ -84,8 +83,14 @@ public class MaterialService {
 
     @Transactional
     public void changeReturnStatus(long returnId, String status) {
-        if (!RETURN_STATUSES.contains(status)) throw new IllegalArgumentException("올바르지 않은 반품 상태입니다.");
-        if (mapper.updateReturnStatus(returnId, status) != 1) throw new IllegalArgumentException("반품 정보를 찾을 수 없습니다.");
+        Map<String, Object> row = required(mapper.lockReturn(returnId), "반품 정보를 찾을 수 없습니다.");
+        String current = String.valueOf(row.get("status"));
+        boolean allowed = ("RETURN_REQUESTED".equals(current) && "RESUPPLYING".equals(status))
+                || ("RESUPPLYING".equals(current) && "RETURN_COMPLETED".equals(status));
+        if (!allowed) throw new IllegalStateException("현재 반품 상태에서는 요청한 단계로 변경할 수 없습니다.");
+        if (mapper.updateReturnStatus(returnId, current, status) != 1) {
+            throw new IllegalStateException("다른 사용자가 먼저 반품 상태를 변경했습니다.");
+        }
     }
 
     @Transactional
@@ -170,7 +175,7 @@ public class MaterialService {
     }
 
     @Transactional public void issueStatement(long procurementId) { if (mapper.issueStatement(procurementId) != 1) throw new IllegalStateException("발행 가능한 입고 건이 아닙니다."); }
-    @Transactional public void notifyStatement(long id) { if (mapper.notifyStatement(id) != 1) throw new IllegalArgumentException("거래명세서를 찾을 수 없습니다."); }
+    @Transactional public void notifyStatement(long id) { if (mapper.notifyStatement(id) != 1) throw new IllegalStateException("발행 완료된 거래명세서만 통보할 수 있습니다."); }
     @Transactional public void closeOrder(long poId) { if (mapper.closePurchaseOrder(poId) != 1) throw new IllegalStateException("입고 완료된 조달 건만 마감할 수 있습니다."); }
 
     private void requireActiveItem(Map<String, Object> row) {

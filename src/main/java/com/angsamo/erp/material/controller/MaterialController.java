@@ -68,6 +68,11 @@ public class MaterialController {
 			HttpSession session, RedirectAttributes redirect) {
 		return execute(redirect, "/material/issues", () -> service.processIssue(issueId, qty, userId(session)), "자재 출고와 재고 산출이 완료되었습니다.");
 	}
+	@PostMapping("/issues/{issueId}") public String processIssueById(@PathVariable long issueId,
+			@RequestParam BigDecimal qty, HttpSession session, RedirectAttributes redirect) {
+		return execute(redirect, "/material/issues",
+				() -> service.processIssue(issueId, qty, userId(session)), "자재 출고와 재고 차감이 완료되었습니다.");
+	}
 	@PostMapping("/inventory/adjust") public String adjustInventory(@RequestParam long departmentId,
 			@RequestParam long itemId, @RequestParam BigDecimal adjustmentQty, @RequestParam String memo,
 			HttpSession session, RedirectAttributes redirect) {
