@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="my" tagdir="/WEB-INF/tags" %>
 
 <!DOCTYPE html>
 <html lang="ko">
@@ -48,7 +49,7 @@
                         <p class="eyebrow">PROCUREMENT</p>
                         <h2><c:out value="${procurement.itemName}" /></h2>
                     </div>
-                    <span class="state-badge enabled"><c:out value="${procurement.status}" /></span>
+                    <my:procurementStatus status="${procurement.status}" />
                 </div>
 
                 <div class="table-scroll">
@@ -96,7 +97,16 @@
                             <c:if test="${not empty procurement.materialRequestId}">
                                 <tr>
                                     <th>자재요청 상태</th>
-                                    <td><c:out value="${procurement.materialRequestStatus}" /></td>
+                                    <td>
+                                        <c:choose>
+                                            <c:when test="${procurement.materialRequestStatus == 'REQUESTED'}"><span class="state-badge enabled">요청</span></c:when>
+                                            <c:when test="${procurement.materialRequestStatus == 'SHORTAGE'}"><span class="state-badge disabled">재고 부족</span></c:when>
+                                            <c:when test="${procurement.materialRequestStatus == 'APPROVED'}"><span class="state-badge enabled">승인</span></c:when>
+                                            <c:when test="${procurement.materialRequestStatus == 'ISSUED'}"><span class="state-badge enabled">불출 완료</span></c:when>
+                                            <c:when test="${procurement.materialRequestStatus == 'REJECTED'}"><span class="state-badge disabled">반려</span></c:when>
+                                            <c:otherwise><span class="state-badge">${procurement.materialRequestStatus}</span></c:otherwise>
+                                        </c:choose>
+                                    </td>
                                     <th>자재요청 수량 / 불출수량</th>
                                     <td>
                                         <c:out value="${procurement.materialRequestQty}" /> /
@@ -300,7 +310,7 @@
                                 <th>입고일시</th>
                                 <td><c:out value="${procurement.receivedAt}" default="-" /></td>
                                 <th>검수결과</th>
-                                <td><c:out value="${procurement.inspectionResult}" default="-" /></td>
+                                <td><my:inspectionResult result="${procurement.inspectionResult}" /></td>
                             </tr>
                             <tr>
                                 <th>계약조건</th>

@@ -177,6 +177,11 @@ public class PurchaseService {
     }
 
     @Transactional(readOnly = true)
+    public com.angsamo.erp.purchase.dto.PurchaseDashboardSummary getDashboardSummary() {
+        return purchaseMapper.findDashboardSummary();
+    }
+
+    @Transactional(readOnly = true)
     public List<ProcurementListItem> getProcurements() {
         return getProcurements(null, null);
     }

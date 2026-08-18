@@ -64,4 +64,11 @@
 		AND mr.issued_at >= DATE_SUB(NOW(), INTERVAL #{hours} HOUR)
 		ORDER BY mr.issued_at DESC
 	</select>
+	<select id="findRecentWeatherAlerts" resultType="com.angsamo.erp.common.notification.NotificationRow">
+		SELECT alert_id AS id, message AS item_name, triggered_at AS occurred_at
+		FROM weather_alert
+		WHERE resolved_at IS NULL
+		AND triggered_at >= DATE_SUB(NOW(), INTERVAL #{hours} HOUR)
+		ORDER BY triggered_at DESC
+	</select>
 </mapper>

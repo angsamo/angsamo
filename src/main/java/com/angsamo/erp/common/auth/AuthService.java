@@ -9,10 +9,11 @@ import com.angsamo.erp.common.session.LoginUser;
 @Service
 public class AuthService {
 	private final AuthMapper authMapper;
-	private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+	private final BCryptPasswordEncoder passwordEncoder;
 
-	public AuthService(AuthMapper authMapper) {
+	public AuthService(AuthMapper authMapper, BCryptPasswordEncoder passwordEncoder) {
 		this.authMapper = authMapper;
+		this.passwordEncoder = passwordEncoder;
 	}
 
 	@Transactional(readOnly = true)

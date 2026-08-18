@@ -151,36 +151,12 @@
     font-weight: 700;
 }
 
-.status-REQUESTED,
-.status-ORDERED {
-    color: #795400;
-    background: #fff1c9;
-}
-
-.status-SUBMITTED,
-.status-IN_PROGRESS {
-    color: #155cb2;
-    background: #e2efff;
-}
-
-.status-SHIPPED {
-    color: #6141b6;
-    background: #eee9ff;
-}
-
-.status-RECEIVED,
-.status-CLOSED,
-.status-SELECTED,
-.status-STATEMENT_ISSUED {
+.status-SELECTED {
     color: #14733d;
     background: #e5f7ed;
 }
 
-.status-RETURNED,
-.status-RETURN_REQUESTED,
-.status-REJECTED,
-.status-PARTIAL,
-.status-RESUPPLYING {
+.status-REJECTED {
     color: #8a3940;
     background: #fdebed;
 }

@@ -21,6 +21,8 @@ import com.angsamo.erp.purchase.dto.VendorAccountItem;
 @Mapper
 public interface PurchaseMapper {
 
+    com.angsamo.erp.purchase.dto.PurchaseDashboardSummary findDashboardSummary();
+
     List<VendorListItem> findAllVendors(
             @Param("keyword") String keyword,
             @Param("active") Boolean active);

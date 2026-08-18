@@ -2,6 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+<%@ taglib prefix="my" tagdir="/WEB-INF/tags" %>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -42,9 +43,18 @@
             <td class="purchase-number"><fmt:formatNumber value="${row.inventoryQty}" /> ${row.unit}</td>
             <td class="purchase-number"><fmt:formatNumber value="${row.movementQty}" /> ${row.unit}</td>
             <td><span class="state-badge purchase-status ${row.inventoryApplied ? 'received' : 'returned'}">${row.inventoryApplied ? '반영 완료' : '미확인'}</span></td>
-            <td><c:out value="${row.inspectionResult}" default="검수 대기" /></td>
+            <td>
+                <c:choose>
+                    <c:when test="${row.inspectionResult == 'ACCEPTED'}">정상 입고</c:when>
+                    <c:when test="${row.inspectionResult == 'RETURNED'}">반품</c:when>
+                    <c:when test="${row.inspectionResult == 'PARTIAL'}">부분 입고</c:when>
+                    <c:when test="${row.inspectionResult == 'REJECTED'}">불합격</c:when>
+                    <c:when test="${empty row.inspectionResult}">검수 대기</c:when>
+                    <c:otherwise><c:out value="${row.inspectionResult}" /></c:otherwise>
+                </c:choose>
+            </td>
             <td><c:out value="${row.shippedAt}" default="-" /></td><td><c:out value="${row.receivedAt}" default="-" /></td><td><c:out value="${row.movementAt}" default="-" /></td>
-            <td><span class="state-badge purchase-status ${fn:toLowerCase(row.status)}"><c:out value="${row.status}" /></span></td>
+            <td><my:procurementStatus status="${row.status}" /></td>
             <td><c:choose><c:when test="${row.readyToClose}"><form method="post" action="${pageContext.request.contextPath}/purchase/procurements/${row.procurementId}/close" onsubmit="return confirm('정상 입고를 확인하고 발주를 마감하시겠습니까?');"><button class="purchase-action-button" type="submit">발주 마감</button></form></c:when><c:when test="${row.status == 'CLOSED'}"><span class="state-badge enabled">마감 완료</span></c:when><c:otherwise>마감 불가</c:otherwise></c:choose></td>
         </tr></c:forEach><c:if test="${empty receivings}"><tr><td colspan="14" class="empty-cell">출하·입고 연계 건이 없습니다.</td></tr></c:if></tbody>
     </table></div></section>

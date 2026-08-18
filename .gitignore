@@ -43,3 +43,7 @@ docs/
 
 # Maven wrapper binary (downloaded automatically)
 .mvn/wrapper/maven-wrapper.jar
+
+# Python services
+python-services/**/venv/
+python-services/**/__pycache__/

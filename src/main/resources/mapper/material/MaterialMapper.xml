@@ -2,6 +2,15 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.angsamo.erp.material.mapper.MaterialMapper">
 
+	<select id="findDashboardSummary" resultType="com.angsamo.erp.material.dto.MaterialDashboardSummary">
+		SELECT
+			(SELECT COUNT(*) FROM inventory) AS total_inventory_item_count,
+			(SELECT COUNT(*) FROM procurement WHERE status = 'SHIPPED') AS pending_receiving_count,
+			(SELECT COUNT(*) FROM material_request WHERE status = 'REQUESTED') AS pending_issue_count,
+			(SELECT COUNT(*) FROM material_request WHERE status = 'SHORTAGE') AS shortage_issue_count,
+			(SELECT COUNT(*) FROM procurement WHERE status IN ('RETURN_REQUESTED','RESUPPLYING')) AS return_in_progress_count
+	</select>
+
 	<!-- 현재 DB의 procurement를 발주·출하·입고 처리 기준으로 사용한다. -->
 	<sql id="procurementColumns">
 		p.procurement_id poId, p.procurement_id procurementId,
@@ -295,7 +304,7 @@
 		SELECT #{departmentId},i.item_id,0,NOW()
 		FROM item i
 		WHERE i.item_id=#{itemId} AND i.active=1 AND i.item_type='MATERIAL'
-		ON DUPLICATE KEY UPDATE updated_at=updated_at
+		ON DUPLICATE KEY UPDATE inventory.updated_at=inventory.updated_at
 	</insert>
 
 	<update id="adjustInventory">

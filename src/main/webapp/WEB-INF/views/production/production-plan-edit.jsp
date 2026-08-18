@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="my" tagdir="/WEB-INF/tags" %>
 
 <!DOCTYPE html>
 <html lang="ko">
@@ -349,39 +350,7 @@
                             <label>현재 상태</label>
 
                             <div class="readonly-value">
-                                <c:choose>
-
-                                    <c:when test="${productionPlan.status == 'PLANNED'}">
-                                        <span class="status-badge planned">
-                                            계획
-                                        </span>
-                                    </c:when>
-
-                                    <c:when test="${productionPlan.status == 'IN_PROGRESS'}">
-                                        <span class="status-badge in-progress">
-                                            진행 중
-                                        </span>
-                                    </c:when>
-
-                                    <c:when test="${productionPlan.status == 'COMPLETED'}">
-                                        <span class="status-badge completed">
-                                            완료
-                                        </span>
-                                    </c:when>
-
-                                    <c:when test="${productionPlan.status == 'CANCELLED'}">
-                                        <span class="status-badge cancelled">
-                                            취소
-                                        </span>
-                                    </c:when>
-
-                                    <c:otherwise>
-                                        <span class="status-badge unknown">
-                                            <c:out value="${productionPlan.status}" />
-                                        </span>
-                                    </c:otherwise>
-
-                                </c:choose>
+                                <my:productionPlanStatus status="${productionPlan.status}" />
                             </div>
 
                             <p class="field-help">

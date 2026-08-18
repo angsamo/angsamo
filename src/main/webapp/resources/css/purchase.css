@@ -1,6 +1,6 @@
 .purchase-dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 16px;
     margin-bottom: 20px;
 }
@@ -49,6 +49,26 @@
 
 .purchase-action-button:hover {
     filter: brightness(0.94);
+}
+
+.purchase-action-button.compact {
+    min-height: 30px;
+    padding: 5px 11px;
+    font-size: 12px;
+}
+
+.purchase-action-button.danger {
+    background: #d9363e;
+}
+
+.vendor-row-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.vendor-row-actions form {
+    margin: 0;
 }
 
 .purchase-flash {
@@ -126,14 +146,8 @@
 .purchase-vendor-info { display: grid; gap: 4px; }
 .purchase-vendor-info small { color: var(--muted); }
 .purchase-status { white-space: nowrap; }
-.purchase-status.requested { color: #6b4f00; background: #fff4cc; }
-.purchase-status.quoting { color: #175a8a; background: #e5f3ff; }
-.purchase-status.selected, .purchase-status.contracted, .purchase-status.ordered { color: #3f4f8f; background: #eceeff; }
-.purchase-status.in_progress, .purchase-status.shipped { color: #875118; background: #fff0df; }
-.purchase-status.received, .purchase-status.closed { color: #14653f; background: #e5f7ed; }
-.purchase-status.cancelled, .purchase-status.returned { color: #8a3940; background: #fdebed; }
-.purchase-status.submitted { color: #175a8a; background: #e5f3ff; }
-.purchase-status.rejected { color: #6b7280; background: #eef0f3; }
+.purchase-status.received { color: #14653f; background: #e5f7ed; }
+.purchase-status.returned { color: #8a3940; background: #fdebed; }
 .purchase-selected-quote { background: #edf8f2; }
 .purchase-selected-quote td:first-child { box-shadow: inset 4px 0 #2c8a5b; }
 

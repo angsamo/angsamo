@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+<%@ taglib prefix="my" tagdir="/WEB-INF/tags" %>
 
 <!DOCTYPE html>
 <html lang="ko">
@@ -104,7 +105,7 @@
                                             <c:out value="${quote.vendorName}" />
                                         </a>
                                     </td>
-                                    <td><span class="state-badge purchase-status ${fn:toLowerCase(quote.status)}"><c:out value="${quote.status}" /></span></td>
+                                    <td><my:quoteStatus status="${quote.status}" /></td>
                                     <td class="purchase-number"><c:out value="${quote.unitPrice}" default="미제출" /></td>
                                     <td class="purchase-number"><c:out value="${quote.totalPrice}" default="미제출" /></td>
                                     <td><c:out value="${quote.deliveryDate}" default="미제출" /></td>

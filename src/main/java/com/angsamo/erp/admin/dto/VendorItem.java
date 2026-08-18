@@ -11,6 +11,10 @@ public class VendorItem {
 	private Long vendorId;
 	private String vendorCode;
 	private String vendorName;
+	private String contactName;
+	private String phone;
+	private String email;
+	private String address;
 	private Boolean active;
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;

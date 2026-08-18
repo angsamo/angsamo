@@ -36,26 +36,70 @@
 					<strong>${summary.totalUsers}</strong>
 					<p>전체 사용자 (정지 ${summary.inactiveUsers})</p>
 				</article>
-				<article class="summary-card">
-					<div class="card-top"><span class="card-label">개발부서</span><span class="icon-box blue material-symbols-outlined">category</span></div>
-					<strong>${summary.development.productWithoutBomCount}</strong>
-					<p>BOM 미등록 완제품</p>
-				</article>
-				<article class="summary-card">
-					<div class="card-top"><span class="card-label">생산부서</span><span class="icon-box green material-symbols-outlined">factory</span></div>
-					<strong>${empty productionActive ? 0 : productionActive}</strong>
-					<p>진행 중 생산계획</p>
-				</article>
-				<article class="summary-card">
-					<div class="card-top"><span class="card-label">자재부서</span><span class="icon-box amber material-symbols-outlined">inventory_2</span></div>
-					<strong>${empty shortageCount ? 0 : shortageCount}</strong>
-					<p>부족 처리 대기 자재요청</p>
-				</article>
-				<article class="summary-card">
-					<div class="card-top"><span class="card-label">구매부서</span><span class="icon-box violet material-symbols-outlined">shopping_cart</span></div>
-					<strong>${empty procurementActive ? 0 : procurementActive}</strong>
-					<p>진행 중 조달업무</p>
-				</article>
+				<c:choose>
+					<c:when test="${canViewDevelopment}">
+						<a class="summary-card" href="${pageContext.request.contextPath}/development">
+							<div class="card-top"><span class="card-label">개발부서</span><span class="icon-box blue material-symbols-outlined">category</span></div>
+							<strong>${summary.development.productWithoutBomCount}</strong>
+							<p>BOM 미등록 완제품</p>
+						</a>
+					</c:when>
+					<c:otherwise>
+						<article class="summary-card disabled-card">
+							<div class="card-top"><span class="card-label">개발부서</span><span class="icon-box blue material-symbols-outlined">category</span></div>
+							<strong>${summary.development.productWithoutBomCount}</strong>
+							<p>BOM 미등록 완제품</p>
+						</article>
+					</c:otherwise>
+				</c:choose>
+				<c:choose>
+					<c:when test="${canViewProduction}">
+						<a class="summary-card" href="${pageContext.request.contextPath}/production">
+							<div class="card-top"><span class="card-label">생산부서</span><span class="icon-box green material-symbols-outlined">factory</span></div>
+							<strong>${empty productionActive ? 0 : productionActive}</strong>
+							<p>진행 중 생산계획</p>
+						</a>
+					</c:when>
+					<c:otherwise>
+						<article class="summary-card disabled-card">
+							<div class="card-top"><span class="card-label">생산부서</span><span class="icon-box green material-symbols-outlined">factory</span></div>
+							<strong>${empty productionActive ? 0 : productionActive}</strong>
+							<p>진행 중 생산계획</p>
+						</article>
+					</c:otherwise>
+				</c:choose>
+				<c:choose>
+					<c:when test="${canViewMaterial}">
+						<a class="summary-card" href="${pageContext.request.contextPath}/material">
+							<div class="card-top"><span class="card-label">자재부서</span><span class="icon-box amber material-symbols-outlined">inventory_2</span></div>
+							<strong>${empty shortageCount ? 0 : shortageCount}</strong>
+							<p>부족 처리 대기 자재요청</p>
+						</a>
+					</c:when>
+					<c:otherwise>
+						<article class="summary-card disabled-card">
+							<div class="card-top"><span class="card-label">자재부서</span><span class="icon-box amber material-symbols-outlined">inventory_2</span></div>
+							<strong>${empty shortageCount ? 0 : shortageCount}</strong>
+							<p>부족 처리 대기 자재요청</p>
+						</article>
+					</c:otherwise>
+				</c:choose>
+				<c:choose>
+					<c:when test="${canViewPurchase}">
+						<a class="summary-card" href="${pageContext.request.contextPath}/purchase">
+							<div class="card-top"><span class="card-label">구매부서</span><span class="icon-box violet material-symbols-outlined">shopping_cart</span></div>
+							<strong>${empty procurementActive ? 0 : procurementActive}</strong>
+							<p>진행 중 조달업무</p>
+						</a>
+					</c:when>
+					<c:otherwise>
+						<article class="summary-card disabled-card">
+							<div class="card-top"><span class="card-label">구매부서</span><span class="icon-box violet material-symbols-outlined">shopping_cart</span></div>
+							<strong>${empty procurementActive ? 0 : procurementActive}</strong>
+							<p>진행 중 조달업무</p>
+						</article>
+					</c:otherwise>
+				</c:choose>
 			</section>
 
 			<section class="content-grid">

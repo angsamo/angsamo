@@ -27,4 +27,7 @@ public interface NotificationMapper {
 
 	/** PRODUCTION: 본인 부서 자재요청이 불출완료된 건 (생산 진행 가능) */
 	List<NotificationRow> findIssuedMaterialRequests(@Param("departmentId") Long departmentId, @Param("hours") int hours);
+
+	/** 전체: 새로 발효된 날씨 특보 (안전 주의 필요) */
+	List<NotificationRow> findRecentWeatherAlerts(@Param("hours") int hours);
 }

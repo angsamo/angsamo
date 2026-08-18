@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.angsamo.erp.admin.mapper.AdminVendorMapper">
+	<sql id="vendorColumns">vendor_id, vendor_code, vendor_name, contact_name, phone, email, address, active, created_at, updated_at</sql>
 	<select id="findAll" resultType="com.angsamo.erp.admin.dto.VendorItem">
-		SELECT vendor_id, vendor_code, vendor_name, active, created_at, updated_at FROM vendor ORDER BY vendor_id
+		SELECT <include refid="vendorColumns"/> FROM vendor ORDER BY vendor_id
 	</select>
 	<select id="findById" resultType="com.angsamo.erp.admin.dto.VendorItem">
-		SELECT vendor_id, vendor_code, vendor_name, active, created_at, updated_at FROM vendor WHERE vendor_id = #{vendorId}
+		SELECT <include refid="vendorColumns"/> FROM vendor WHERE vendor_id = #{vendorId}
 	</select>
 	<select id="findPage" resultType="com.angsamo.erp.admin.dto.VendorItem">
-		SELECT vendor_id, vendor_code, vendor_name, active, created_at, updated_at FROM vendor
+		SELECT <include refid="vendorColumns"/> FROM vendor
 		<where>
 			<if test="active != null">AND active = #{active}</if>
 		</where>
@@ -22,6 +23,18 @@
 		</where>
 	</select>
 	<select id="countByCode" resultType="int">SELECT COUNT(*) FROM vendor WHERE vendor_code = #{vendorCode}</select>
-	<insert id="insert">INSERT INTO vendor (vendor_code, vendor_name, active) VALUES (#{vendorCode}, #{vendorName}, 1)</insert>
-	<update id="update">UPDATE vendor SET vendor_name = #{vendorName} WHERE vendor_id = #{vendorId}</update>
+	<insert id="insert">
+		INSERT INTO vendor (vendor_code, vendor_name, contact_name, phone, email, address, active)
+		VALUES (#{vendorCode}, #{vendorName}, #{contactName}, #{phone}, #{email}, #{address}, 1)
+	</insert>
+	<update id="update">
+		UPDATE vendor
+		SET vendor_name = #{vendor.vendorName},
+		    contact_name = #{vendor.contactName},
+		    phone = #{vendor.phone},
+		    email = #{vendor.email},
+		    address = #{vendor.address},
+		    active = #{vendor.active}
+		WHERE vendor_id = #{vendorId}
+	</update>
 </mapper>

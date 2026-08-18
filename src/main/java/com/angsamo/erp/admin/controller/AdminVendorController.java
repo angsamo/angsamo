@@ -56,8 +56,8 @@ public class AdminVendorController {
 	}
 
 	@PostMapping("/admin/vendors/{vendorId}")
-	public String update(@PathVariable Long vendorId, @RequestParam String vendorName, RedirectAttributes redirect) {
-		return run(() -> service.update(vendorId, vendorName), "\uD611\uB825\uD68C\uC0AC \uC815\uBCF4\uB97C \uC218\uC815\uD588\uC2B5\uB2C8\uB2E4.", redirect);
+	public String update(@PathVariable Long vendorId, VendorItem vendor, RedirectAttributes redirect) {
+		return run(() -> service.update(vendorId, vendor), "\uD611\uB825\uD68C\uC0AC \uC815\uBCF4\uB97C \uC218\uC815\uD588\uC2B5\uB2C8\uB2E4.", redirect);
 	}
 
 	private String run(Runnable action, String success, RedirectAttributes redirect) {

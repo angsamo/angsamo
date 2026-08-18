@@ -5,6 +5,20 @@
 
 <mapper namespace="com.angsamo.erp.purchase.mapper.PurchaseMapper">
 
+    <select id="findDashboardSummary" resultType="com.angsamo.erp.purchase.dto.PurchaseDashboardSummary">
+        SELECT
+            (SELECT COUNT(*) FROM procurement) AS total_procurement_count,
+            (SELECT COUNT(*) FROM procurement WHERE status = 'QUOTING') AS quoting_count,
+            (SELECT COUNT(*) FROM procurement WHERE status = 'ORDERED') AS ordered_count,
+            (SELECT COUNT(*) FROM procurement WHERE status = 'SHIPPED') AS shipped_waiting_count,
+            (SELECT COUNT(*) FROM material_request mr
+             WHERE mr.status = 'SHORTAGE'
+               AND NOT EXISTS (
+                   SELECT 1 FROM procurement p
+                   WHERE p.material_request_id = mr.request_id AND p.status != 'CANCELLED'
+               )) AS shortage_waiting_count
+    </select>
+
     <select id="findAllVendors"
             resultType="com.angsamo.erp.purchase.dto.VendorListItem">
         SELECT

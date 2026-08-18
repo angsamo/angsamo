@@ -21,7 +21,7 @@ public class MaterialController {
 	private final MaterialService service;
 	public MaterialController(MaterialService service) { this.service = service; }
 
-	@GetMapping public String dashboard(Model model) { model.addAttribute("orders", service.purchaseOrders()); return "material/dashboard"; }
+	@GetMapping public String dashboard(Model model) { model.addAttribute("summary", service.dashboardSummary()); model.addAttribute("orders", service.purchaseOrders()); return "material/dashboard"; }
 	@GetMapping("/receivings")
 	public String receivings(@RequestParam(required=false) String fromDate,
 			@RequestParam(required=false) String toDate, @RequestParam(required=false) String status,

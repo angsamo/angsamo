@@ -130,18 +130,17 @@
 									    <c:out value="${vendor.createdAt}" />
 									</td>
 
-									<td>
-									    <a href="${pageContext.request.contextPath}/purchase/vendors/${vendor.vendorId}/edit">
+									<td class="vendor-row-actions">
+									    <a class="purchase-action-button compact" href="${pageContext.request.contextPath}/purchase/vendors/${vendor.vendorId}/edit">
 									        수정
 									    </a>
 
 									    <c:if test="${vendor.active}">
 									        <form method="post"
 									              action="${pageContext.request.contextPath}/purchase/vendors/${vendor.vendorId}/deactivate"
-									              style="display:inline"
 									              onsubmit="return confirm('거래를 중지하시겠습니까?');">
 
-									            <button type="submit">거래 중지</button>
+									            <button class="purchase-action-button compact danger" type="submit">거래 중지</button>
 									        </form>
 									    </c:if>
 									</td>

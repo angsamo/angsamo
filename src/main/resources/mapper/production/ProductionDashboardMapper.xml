@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.angsamo.erp.production.mapper.ProductionDashboardMapper">
+
+    <select id="findSummary"
+            resultType="com.angsamo.erp.production.domain.ProductionDashboardSummary">
+        SELECT
+            (SELECT COUNT(*) FROM production_plan) AS total_plan_count,
+            (SELECT COUNT(*) FROM production_plan WHERE status = 'PLANNED') AS planned_count,
+            (SELECT COUNT(*) FROM production_plan WHERE status = 'IN_PROGRESS') AS in_progress_count,
+            (SELECT COUNT(*) FROM production_plan WHERE status = 'COMPLETED') AS completed_count,
+            (SELECT COUNT(*) FROM material_request WHERE status = 'SHORTAGE') AS shortage_request_count
+    </select>
+
+    <select id="findRecentPlans"
+            resultType="com.angsamo.erp.production.domain.ProductionPlan">
+        SELECT
+            pp.production_plan_id,
+            pp.department_id,
+            pp.item_id,
+            pp.production_qty,
+            pp.start_date,
+            pp.due_date,
+            pp.status,
+            pp.created_by,
+            pp.created_at,
+            pp.updated_at,
+            i.item_code,
+            i.item_name,
+            d.department_name,
+            u.user_name AS created_by_name
+        FROM production_plan pp
+        JOIN item i ON i.item_id = pp.item_id
+        JOIN department d ON d.department_id = pp.department_id
+        JOIN app_user u ON u.user_id = pp.created_by
+        ORDER BY pp.created_at DESC, pp.production_plan_id DESC
+        LIMIT 5
+    </select>
+
+    <select id="findRecentMaterialRequests"
+            resultType="com.angsamo.erp.production.domain.MaterialRequest">
+        SELECT
+            mr.request_id,
+            mr.production_plan_id,
+            mr.department_id,
+            mr.item_id,
+            mr.request_qty,
+            mr.issued_qty,
+            mr.required_date,
+            mr.status,
+            mr.requested_by,
+            mr.processed_by,
+            mr.issued_at,
+            mr.created_at,
+            mr.updated_at,
+            i.item_code,
+            i.item_name,
+            d.department_name,
+            requester.user_name AS requested_by_name,
+            processor.user_name AS processed_by_name
+        FROM material_request mr
+        JOIN item i ON i.item_id = mr.item_id
+        JOIN department d ON d.department_id = mr.department_id
+        JOIN app_user requester ON requester.user_id = mr.requested_by
+        LEFT JOIN app_user processor ON processor.user_id = mr.processed_by
+        ORDER BY mr.created_at DESC, mr.request_id DESC
+        LIMIT 5
+    </select>
+
+</mapper>

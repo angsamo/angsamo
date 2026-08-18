@@ -36,6 +36,7 @@ public class PurchaseController {
     @GetMapping("/purchase")
     public String purchaseDashboard(Model model, HttpSession session) {
         requirePurchase(session);
+        model.addAttribute("summary", purchaseService.getDashboardSummary());
         model.addAttribute("procurements", purchaseService.getProcurements());
         model.addAttribute("quotes", purchaseService.getVendorQuotes());
         return "purchase/dashboard";

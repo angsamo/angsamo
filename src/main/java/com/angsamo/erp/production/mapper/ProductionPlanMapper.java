@@ -29,4 +29,7 @@ public interface ProductionPlanMapper {
             @Param("productionPlanId") Long productionPlanId,
             @Param("status") String status
     );
+
+    // 부서코드로 부서 ID 조회 (관리자 대행 등록 시 사용)
+    Long findDepartmentIdByCode(@Param("departmentCode") String departmentCode);
 }
