@@ -12,4 +12,14 @@ public class ForecastPoint {
 
     public String getTimeLabel() { return timeLabel; }
     public String getTemperature() { return temperature; }
+
+    /** -15~40℃ 범위를 차트 높이 8~100%로 변환한다. */
+    public int getChartHeight() {
+        try {
+            double value = Double.parseDouble(temperature);
+            return (int) Math.max(8, Math.min(100, ((value + 15) / 55) * 100));
+        } catch (Exception e) {
+            return 8;
+        }
+    }
 }
