@@ -3,5 +3,6 @@ uvicorn[standard]
 python-multipart
 pillow
 ultralytics
+opencv-python
 scikit-learn==1.6.1
 joblib

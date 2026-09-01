@@ -92,16 +92,16 @@
             </section>
 
             <section class="panel safety-panel">
-                <div class="panel-header"><div><p class="eyebrow">HELMET</p><h2>최근 미착용 이력</h2></div><a class="safety-panel-link" href="${pageContext.request.contextPath}/safety/checklist">전체 점검 보기 →</a></div>
+                <div class="panel-header"><div><p class="eyebrow">HELMET</p><h2>최근 부적합 이력</h2></div><a class="safety-panel-link" href="${pageContext.request.contextPath}/safety/checklist">전체 점검 보기 →</a></div>
                 <c:choose>
                     <c:when test="${empty recentViolations}">
-                        <p style="color:var(--muted); font-size:13px;">최근 안전모 미착용 적발 이력이 없습니다.</p>
+                        <p style="color:var(--muted); font-size:13px;">최근 부적합 적발 이력이 없습니다.</p>
                     </c:when>
                     <c:otherwise>
                         <ul class="violation-list">
                             <c:forEach var="v" items="${recentViolations}">
                                 <li>
-                                    <span class="state-badge disabled">미착용</span>
+                                    <span class="state-badge disabled">부적합</span>
                                     <span class="v-meta"><c:out value="${empty v.departmentName ? '전체' : v.departmentName}"/> · <c:out value="${empty v.location ? '-' : v.location}"/></span>
                                     <span class="v-meta">${v.checkedAt}</span>
                                 </li>

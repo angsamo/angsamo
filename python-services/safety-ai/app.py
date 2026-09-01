@@ -1,7 +1,12 @@
 import io
+import threading
+import time
+from datetime import datetime, timedelta
 
+import cv2
 import joblib
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+from fastapi.responses import StreamingResponse
 from PIL import Image
 from pydantic import BaseModel
 from ultralytics import YOLO
@@ -18,14 +23,10 @@ risk_model = _risk_bundle["model"]
 # 로보플로우 클래스 체계: helmet(착용) / head(미착용) / person(참고용, 판정에 미사용)
 HELMET_LABEL = "helmet"
 NO_HELMET_LABEL = "head"
-CONFIDENCE_THRESHOLD = 0.5
+CONFIDENCE_THRESHOLD = 0.7
 
 
-@app.post("/helmet/predict")
-async def predict_helmet(file: UploadFile = File(...)):
-    image_bytes = await file.read()
-    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-
+def run_helmet_detection(image):
     results = helmet_model.predict(image, conf=CONFIDENCE_THRESHOLD, verbose=False)
     names = helmet_model.names
     predictions = []
@@ -62,6 +63,167 @@ async def predict_helmet(file: UploadFile = File(...)):
         "noHelmetCount": no_helmet_count,
         "message": message,
         "predictions": predictions,
+    }
+
+
+@app.post("/helmet/predict")
+async def predict_helmet(file: UploadFile = File(...)):
+    image_bytes = await file.read()
+    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    return run_helmet_detection(image)
+
+
+# ── CCTV 실시간 프레임 탐지 ───────────────────────────────────
+CAPTURE_INTERVAL_SECONDS = 15
+MAX_JOB_DURATION = timedelta(hours=6)  # 방치된 작업 자동 종료용 안전장치
+ALLOWED_SCHEMES = ("rtsp://", "http://", "https://")
+
+
+class CctvJob:
+    def __init__(self, rtsp_url: str):
+        self.rtsp_url = rtsp_url
+        self.started_at = datetime.now()
+        self.stop_event = threading.Event()
+        self.thread = threading.Thread(target=self._run, daemon=True)
+        self.last_result = None
+        self.last_checked_at = None
+        self.error = None
+        self.latest_frame = None
+        self.last_predictions = []
+        self.frame_lock = threading.Lock()
+
+    def start(self):
+        self.thread.start()
+
+    def stop(self):
+        self.stop_event.set()
+
+    def _run(self):
+        capture = cv2.VideoCapture(self.rtsp_url)
+        if not capture.isOpened():
+            self.error = "카메라 스트림을 열 수 없습니다."
+            self.stop_event.set()
+            return
+
+        last_detect_at = 0.0
+        try:
+            while not self.stop_event.is_set():
+                if datetime.now() - self.started_at > MAX_JOB_DURATION:
+                    self.error = "최대 실행 시간을 초과해 자동 종료되었습니다."
+                    break
+
+                ok, frame = capture.read()
+                if not ok:
+                    self.error = "프레임을 읽을 수 없습니다."
+                    break
+
+                with self.frame_lock:
+                    self.latest_frame = frame
+
+                now = time.monotonic()
+                if now - last_detect_at >= CAPTURE_INTERVAL_SECONDS:
+                    image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    self.last_result = run_helmet_detection(image)
+                    self.last_predictions = self.last_result.get("predictions", [])
+                    self.last_checked_at = datetime.now().isoformat()
+                    last_detect_at = now
+        finally:
+            capture.release()
+
+    def get_frame_jpeg(self):
+        with self.frame_lock:
+            frame = self.latest_frame
+            predictions = self.last_predictions
+        if frame is None:
+            return None
+
+        frame = _draw_predictions(frame, predictions)
+        ok, buffer = cv2.imencode(".jpg", frame)
+        return buffer.tobytes() if ok else None
+
+
+def _draw_predictions(frame, predictions):
+    frame = frame.copy()
+    for p in predictions:
+        is_helmet = p["class"] == HELMET_LABEL
+        color = (0, 200, 0) if is_helmet else (0, 0, 230)  # BGR: 초록=착용, 빨강=미착용
+        x1 = int(p["x"] - p["width"] / 2)
+        y1 = int(p["y"] - p["height"] / 2)
+        x2 = int(p["x"] + p["width"] / 2)
+        y2 = int(p["y"] + p["height"] / 2)
+        cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+        label = f"{'helmet' if is_helmet else 'head'} {p['confidence']:.2f}"
+        (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+        cv2.rectangle(frame, (x1, y1 - th - 8), (x1 + tw + 6, y1), color, -1)
+        cv2.putText(frame, label, (x1 + 3, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+    return frame
+
+
+_cctv_job: CctvJob | None = None
+_cctv_lock = threading.Lock()
+
+
+@app.post("/cctv/start")
+async def start_cctv(rtsp_url: str = Query(...)):
+    global _cctv_job
+
+    if not rtsp_url.startswith(ALLOWED_SCHEMES):
+        raise HTTPException(status_code=400, detail="지원하지 않는 스트림 주소 형식입니다.")
+
+    with _cctv_lock:
+        if _cctv_job is not None and _cctv_job.thread.is_alive():
+            raise HTTPException(status_code=409, detail="이미 진행 중인 CCTV 탐지가 있습니다. 먼저 중지해 주세요.")
+        _cctv_job = CctvJob(rtsp_url)
+        _cctv_job.start()
+
+    return {"success": True, "message": "CCTV 탐지를 시작했습니다.", "intervalSeconds": CAPTURE_INTERVAL_SECONDS}
+
+
+@app.post("/cctv/stop")
+async def stop_cctv():
+    global _cctv_job
+
+    with _cctv_lock:
+        if _cctv_job is None or not _cctv_job.thread.is_alive():
+            raise HTTPException(status_code=409, detail="진행 중인 CCTV 탐지가 없습니다.")
+        _cctv_job.stop()
+
+    return {"success": True, "message": "CCTV 탐지를 중지했습니다."}
+
+
+def _mjpeg_frames(job: CctvJob):
+    while not job.stop_event.is_set():
+        jpeg = job.get_frame_jpeg()
+        if jpeg is not None:
+            yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + jpeg + b"\r\n"
+        time.sleep(0.1)
+
+
+@app.get("/cctv/stream")
+async def cctv_stream():
+    with _cctv_lock:
+        job = _cctv_job
+
+    if job is None or not job.thread.is_alive():
+        raise HTTPException(status_code=409, detail="진행 중인 CCTV 탐지가 없습니다.")
+
+    return StreamingResponse(_mjpeg_frames(job), media_type="multipart/x-mixed-replace; boundary=frame")
+
+
+@app.get("/cctv/status")
+async def cctv_status():
+    with _cctv_lock:
+        job = _cctv_job
+
+    if job is None:
+        return {"running": False}
+
+    return {
+        "running": job.thread.is_alive() and not job.stop_event.is_set(),
+        "startedAt": job.started_at.isoformat(),
+        "lastCheckedAt": job.last_checked_at,
+        "lastResult": job.last_result,
+        "error": job.error,
     }
 
 

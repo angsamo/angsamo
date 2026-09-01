@@ -30,7 +30,8 @@
 			<div class="submenu">
 				<a href="${pageContext.request.contextPath}/safety">전체 현황</a>
 				<a href="${pageContext.request.contextPath}/safety/weather">날씨</a>
-				<a href="${pageContext.request.contextPath}/safety/checklist">안전모 점검</a>
+				<a href="${pageContext.request.contextPath}/safety/checklist">안전모 체크리스트</a>
+				<a href="${pageContext.request.contextPath}/safety/cctv">안전모 실시간 확인</a>
 			</div>
 		</div>
 		</c:if>

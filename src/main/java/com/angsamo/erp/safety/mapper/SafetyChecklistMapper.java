@@ -23,7 +23,9 @@ public interface SafetyChecklistMapper {
 
     List<SafetyCheckItem> findItemsByChecklistId(@Param("checklistId") Long checklistId);
 
-    List<SafetyCheckItem> findRecentHelmetOffItems(@Param("limit") int limit);
+    List<SafetyCheckItem> findRecentViolationItems(@Param("limit") int limit);
 
     int insertItem(SafetyCheckItem item);
+
+    int deleteItem(@Param("itemId") Long itemId);
 }
