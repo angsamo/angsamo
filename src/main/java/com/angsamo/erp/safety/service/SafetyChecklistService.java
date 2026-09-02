@@ -6,7 +6,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -58,7 +60,7 @@ public class SafetyChecklistService {
 
     @Transactional(readOnly = true)
     public List<SafetyCheckItem> getRecentViolations(int limit) {
-        return mapper.findRecentHelmetOffItems(limit);
+        return mapper.findRecentViolationItems(limit);
     }
 
     @Transactional
@@ -76,7 +78,8 @@ public class SafetyChecklistService {
     }
 
     @Transactional
-    public void addItem(Long checklistId, MultipartFile media, boolean helmetWorn, String memo) {
+    public void addItem(Long checklistId, MultipartFile media, boolean helmetWorn, boolean chinStrapFastened,
+            boolean damaged, boolean expired, String memo) {
         SafetyChecklist checklist = getChecklist(checklistId);
         if (!"IN_PROGRESS".equals(checklist.getStatus())) {
             throw new IllegalStateException("진행 중인 체크리스트에만 항목을 추가할 수 있습니다.");
@@ -97,8 +100,39 @@ public class SafetyChecklistService {
             item.setHelmetWorn(helmetWorn);
             item.setDetectionSource("MANUAL");
         }
+        item.setDetectionBoxes(toJson(detection.getPredictions()));
+        item.setChinStrapFastened(chinStrapFastened);
+        item.setDamaged(damaged);
+        item.setExpired(expired);
         item.setMemo(memo);
         mapper.insertItem(item);
+    }
+
+    @Transactional
+    public void deleteItem(Long itemId) {
+        if (mapper.deleteItem(itemId) != 1) {
+            throw new IllegalArgumentException("확인 항목을 찾을 수 없습니다.");
+        }
+    }
+
+    // 탐지 박스 목록(class/confidence/x/y/width/height)을 단순 JSON 배열 문자열로 직렬화한다.
+    private String toJson(List<Map<String, Object>> predictions) {
+        if (predictions == null || predictions.isEmpty()) {
+            return "[]";
+        }
+        return "[" + predictions.stream().map(this::toJsonObject).collect(Collectors.joining(",")) + "]";
+    }
+
+    private String toJsonObject(Map<String, Object> box) {
+        StringBuilder sb = new StringBuilder("{");
+        sb.append("\"class\":\"").append(String.valueOf(box.get("class")).replace("\"", "'")).append("\",");
+        sb.append("\"confidence\":").append(box.getOrDefault("confidence", 0)).append(",");
+        sb.append("\"x\":").append(box.getOrDefault("x", 0)).append(",");
+        sb.append("\"y\":").append(box.getOrDefault("y", 0)).append(",");
+        sb.append("\"width\":").append(box.getOrDefault("width", 0)).append(",");
+        sb.append("\"height\":").append(box.getOrDefault("height", 0));
+        sb.append("}");
+        return sb.toString();
     }
 
     @Transactional

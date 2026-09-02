@@ -8,7 +8,8 @@
             d.department_name,
             u.user_name AS checked_by_name,
             COUNT(i.item_id) AS item_count,
-            SUM(CASE WHEN i.helmet_worn = 0 THEN 1 ELSE 0 END) AS helmet_off_count
+            SUM(CASE WHEN i.helmet_worn = 0 OR i.chin_strap_fastened = 0
+                          OR i.is_damaged = 1 OR i.is_expired = 1 THEN 1 ELSE 0 END) AS violation_count
         FROM safety_checklist c
         LEFT JOIN department d ON d.department_id = c.department_id
         JOIN app_user u ON u.user_id = c.checked_by
@@ -51,26 +52,34 @@
     </update>
 
     <select id="findItemsByChecklistId" resultType="com.angsamo.erp.safety.domain.SafetyCheckItem">
-        SELECT item_id, checklist_id, media_path, helmet_worn, detection_source, memo, checked_at
+        SELECT item_id, checklist_id, media_path, helmet_worn, chin_strap_fastened, is_damaged AS damaged,
+               is_expired AS expired, detection_source, detection_boxes, memo, checked_at
         FROM safety_check_item
         WHERE checklist_id = #{checklistId}
         ORDER BY checked_at DESC, item_id DESC
     </select>
 
     <insert id="insertItem" useGeneratedKeys="true" keyProperty="itemId" keyColumn="item_id">
-        INSERT INTO safety_check_item (checklist_id, media_path, helmet_worn, detection_source, memo)
-        VALUES (#{checklistId}, #{mediaPath}, #{helmetWorn}, #{detectionSource}, #{memo})
+        INSERT INTO safety_check_item
+            (checklist_id, media_path, helmet_worn, chin_strap_fastened, is_damaged, is_expired, detection_source, detection_boxes, memo)
+        VALUES
+            (#{checklistId}, #{mediaPath}, #{helmetWorn}, #{chinStrapFastened}, #{damaged}, #{expired}, #{detectionSource}, #{detectionBoxes}, #{memo})
     </insert>
 
-    <select id="findRecentHelmetOffItems" resultType="com.angsamo.erp.safety.domain.SafetyCheckItem">
+    <delete id="deleteItem">
+        DELETE FROM safety_check_item WHERE item_id = #{itemId}
+    </delete>
+
+    <select id="findRecentViolationItems" resultType="com.angsamo.erp.safety.domain.SafetyCheckItem">
         SELECT
-            i.item_id, i.checklist_id, i.media_path, i.helmet_worn, i.detection_source, i.memo, i.checked_at,
+            i.item_id, i.checklist_id, i.media_path, i.helmet_worn, i.chin_strap_fastened,
+            i.is_damaged AS damaged, i.is_expired AS expired, i.detection_source, i.memo, i.checked_at,
             c.location, c.check_date,
             d.department_name
         FROM safety_check_item i
         JOIN safety_checklist c ON c.checklist_id = i.checklist_id
         LEFT JOIN department d ON d.department_id = c.department_id
-        WHERE i.helmet_worn = 0
+        WHERE i.helmet_worn = 0 OR i.chin_strap_fastened = 0 OR i.is_damaged = 1 OR i.is_expired = 1
         ORDER BY i.checked_at DESC, i.item_id DESC
         LIMIT #{limit}
     </select>

@@ -16,7 +16,7 @@ public class SafetyChecklist {
     private String departmentName;
     private String checkedByName;
     private int itemCount;
-    private int helmetOffCount;
+    private int violationCount;
 
     public Long getChecklistId() { return checklistId; }
     public void setChecklistId(Long checklistId) { this.checklistId = checklistId; }
@@ -38,6 +38,6 @@ public class SafetyChecklist {
     public void setCheckedByName(String checkedByName) { this.checkedByName = checkedByName; }
     public int getItemCount() { return itemCount; }
     public void setItemCount(int itemCount) { this.itemCount = itemCount; }
-    public int getHelmetOffCount() { return helmetOffCount; }
-    public void setHelmetOffCount(int helmetOffCount) { this.helmetOffCount = helmetOffCount; }
+    public int getViolationCount() { return violationCount; }
+    public void setViolationCount(int violationCount) { this.violationCount = violationCount; }
 }
