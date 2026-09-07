@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Param;
 
 import com.angsamo.erp.safety.domain.SafetyCheckItem;
 import com.angsamo.erp.safety.domain.SafetyChecklist;
+import com.angsamo.erp.safety.dto.SafetyChecklistSummary;
 
 @Mapper
 public interface SafetyChecklistMapper {
@@ -28,4 +29,6 @@ public interface SafetyChecklistMapper {
     int insertItem(SafetyCheckItem item);
 
     int deleteItem(@Param("itemId") Long itemId);
+
+    SafetyChecklistSummary getDashboardSummary();
 }

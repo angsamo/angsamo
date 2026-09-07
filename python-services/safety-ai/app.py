@@ -1,17 +1,26 @@
 import io
+import os
 import threading
 import time
+import uuid
+from collections import deque
 from datetime import datetime, timedelta
 
 import cv2
 import joblib
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from PIL import Image
 from pydantic import BaseModel
 from ultralytics import YOLO
 
 app = FastAPI()
+
+# CCTV 탐지 로그용 스냅샷 이미지 저장 폴더. /cctv/logs/파일명 으로 접근 가능.
+CCTV_LOG_DIR = "cctv_logs"
+os.makedirs(CCTV_LOG_DIR, exist_ok=True)
+app.mount("/cctv/logs", StaticFiles(directory=CCTV_LOG_DIR), name="cctv_logs")
 
 helmet_model = YOLO("best.pt")
 
@@ -91,6 +100,7 @@ class CctvJob:
         self.latest_frame = None
         self.last_predictions = []
         self.frame_lock = threading.Lock()
+        self.history = deque(maxlen=100)  # 최근 탐지 로그 (화면에 착용/미착용 이력으로 표시)
 
     def start(self):
         self.thread.start()
@@ -126,18 +136,36 @@ class CctvJob:
                     self.last_result = run_helmet_detection(image)
                     self.last_predictions = self.last_result.get("predictions", [])
                     self.last_checked_at = datetime.now().isoformat()
+
+                    snapshot_frame = _draw_predictions(frame, self.last_predictions)
+                    filename = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}.jpg"
+                    cv2.imwrite(os.path.join(CCTV_LOG_DIR, filename), snapshot_frame)
+
+                    if len(self.history) == self.history.maxlen:
+                        oldest = self.history[-1]
+                        old_path = os.path.join(CCTV_LOG_DIR, os.path.basename(oldest.get("image", "")))
+                        if oldest.get("image") and os.path.exists(old_path):
+                            os.remove(old_path)
+
+                    self.history.appendleft({
+                        "checkedAt": self.last_checked_at,
+                        "status": self.last_result.get("status"),
+                        "helmetWorn": self.last_result.get("helmetWorn"),
+                        "message": self.last_result.get("message"),
+                        "image": f"/cctv/logs/{filename}",
+                    })
                     last_detect_at = now
         finally:
             capture.release()
 
     def get_frame_jpeg(self):
+        # 실시간 영상은 매 프레임 갱신되는데 탐지 박스는 15초에 한 번만 갱신되어 움직이는 사람을
+        # 따라가지 못하고 어긋나 보이므로, 박스는 로그 스냅샷에서만 보여주고 실시간 영상은 그대로 내보낸다.
         with self.frame_lock:
             frame = self.latest_frame
-            predictions = self.last_predictions
         if frame is None:
             return None
 
-        frame = _draw_predictions(frame, predictions)
         ok, buffer = cv2.imencode(".jpg", frame)
         return buffer.tobytes() if ok else None
 
@@ -224,6 +252,7 @@ async def cctv_status():
         "lastCheckedAt": job.last_checked_at,
         "lastResult": job.last_result,
         "error": job.error,
+        "history": list(job.history),
     }
 
 

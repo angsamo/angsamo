@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.angsamo.erp.safety.mapper.WeatherDailyLogMapper">
+
+    <!-- 그날 마지막으로 조회된 날씨로 계속 덮어써서 "그날의 날씨"를 남긴다. memo는 사람이 직접 남긴 메모라
+         자동 갱신 시 덮어쓰지 않도록 UPDATE 절에서 제외한다 (updateMemo로만 변경). -->
+    <insert id="upsert">
+        INSERT INTO weather_daily_log
+            (log_date, temperature, precipitation, risk_level, max_temperature, min_temperature, snowfall, alert_summary)
+        VALUES
+            (#{logDate}, #{temperature}, #{precipitation}, #{riskLevel}, #{maxTemperature}, #{minTemperature}, #{snowfall}, #{alertSummary})
+        ON DUPLICATE KEY UPDATE
+            temperature = #{temperature},
+            precipitation = #{precipitation},
+            risk_level = #{riskLevel},
+            max_temperature = #{maxTemperature},
+            min_temperature = #{minTemperature},
+            snowfall = #{snowfall},
+            alert_summary = #{alertSummary},
+            updated_at = NOW()
+    </insert>
+
+    <select id="findByMonth" resultType="com.angsamo.erp.safety.domain.WeatherDailyLog">
+        SELECT log_date, temperature, precipitation, risk_level,
+               max_temperature, min_temperature, snowfall, alert_summary, memo
+        FROM weather_daily_log
+        WHERE log_date BETWEEN #{start} AND #{end}
+        ORDER BY log_date
+    </select>
+
+    <update id="updateMemo">
+        UPDATE weather_daily_log SET memo = #{memo} WHERE log_date = #{logDate}
+    </update>
+
+</mapper>

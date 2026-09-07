@@ -1,22 +1,32 @@
 package com.angsamo.erp.safety.service;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.json.JsonParserFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
 
+import com.angsamo.erp.safety.domain.WeatherDailyLog;
 import com.angsamo.erp.safety.dto.ForecastPoint;
 import com.angsamo.erp.safety.dto.WeatherAlert;
 import com.angsamo.erp.safety.dto.WeatherStatus;
 import com.angsamo.erp.safety.mapper.WeatherAlertMapper;
+import com.angsamo.erp.safety.mapper.WeatherDailyLogMapper;
 
 @Service
 public class WeatherService {
@@ -26,6 +36,17 @@ public class WeatherService {
 
     private final RestClient restClient = RestClient.create();
     private final WeatherAlertMapper weatherAlertMapper;
+    private final WeatherDailyLogMapper weatherDailyLogMapper;
+
+    // 안전모 AI 서버(HelmetDetectionService)와 동일한 이유로 HTTP/1.1을 강제한다:
+    // 기본 HttpClient의 h2c 업그레이드 시도를 uvicorn이 제대로 처리하지 못해 본문이 유실되는 문제가 있었다.
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_1_1)
+            .connectTimeout(Duration.ofSeconds(3))
+            .build();
+
+    @Value("${weather.risk-api-url:}")
+    private String riskApiUrl;
 
     @Value("${kma.api-key}")
     private String apiKey;
@@ -51,18 +72,65 @@ public class WeatherService {
     @Value("${weather.longitude:126.9780}")
     private double longitude;
 
-    public WeatherService(WeatherAlertMapper weatherAlertMapper) {
+    public WeatherService(WeatherAlertMapper weatherAlertMapper, WeatherDailyLogMapper weatherDailyLogMapper) {
         this.weatherAlertMapper = weatherAlertMapper;
+        this.weatherDailyLogMapper = weatherDailyLogMapper;
     }
+
+    public double getLatitude() { return latitude; }
+    public double getLongitude() { return longitude; }
 
     @Transactional
     public WeatherStatus getStatus() {
-        if (apiKey != null && !apiKey.isBlank()) {
-            WeatherStatus kmaStatus = readKmaStatus();
-            if (kmaStatus != null) return kmaStatus;
-        }
+        WeatherStatus status = (apiKey != null && !apiKey.isBlank()) ? readKmaStatus() : null;
+        if (status == null) status = readOpenMeteoStatus();
+        return status;
+    }
 
-        return readOpenMeteoStatus();
+    // 날씨 달력용: 조회할 때마다 오늘 날짜 행을 최신 값으로 덮어쓴다. 연결 실패 등 값이 없을 땐 기록하지 않는다.
+    // maxTemperature/minTemperature/snowfall/alerts는 기상청 예보 경로에서만 채워지고, Open-Meteo 대체 경로에서는 null/빈 값으로 남는다.
+    private void logDailySnapshot(WeatherStatus status, Double maxTemperature, Double minTemperature,
+            Double snowfall, List<WeatherAlert> alerts) {
+        double temp = parseDouble(status.getTemperature());
+        double precip = parseDouble(status.getPrecipitation());
+        if ("-".equals(status.getTemperature()) || status.getRiskLevel() == null
+                || "확인 필요".equals(status.getRiskLevel())) {
+            return;
+        }
+        WeatherDailyLog log = new WeatherDailyLog();
+        log.setLogDate(java.time.LocalDate.now());
+        log.setTemperature(temp);
+        log.setPrecipitation(precip);
+        log.setRiskLevel(status.getRiskLevel());
+        log.setMaxTemperature(maxTemperature);
+        log.setMinTemperature(minTemperature);
+        log.setSnowfall(snowfall);
+        log.setAlertSummary(alerts == null || alerts.isEmpty() ? null
+                : alerts.stream().map(WeatherAlert::getMessage).distinct().collect(java.util.stream.Collectors.joining(", ")));
+        try {
+            weatherDailyLogMapper.upsert(log);
+        } catch (Exception ignored) {
+            // 달력 기록 실패가 날씨 화면 자체를 막으면 안 되므로 조용히 무시
+        }
+    }
+
+    // 날씨 달력 화면: 해당 월의 기록된 날짜들을 반환
+    @Transactional(readOnly = true)
+    public List<WeatherDailyLog> getMonthlyLog(java.time.YearMonth month) {
+        return weatherDailyLogMapper.findByMonth(month.atDay(1), month.atEndOfMonth());
+    }
+
+    // 대시보드 미니 그래프용: 최근 며칠간의 기록 (월 경계와 무관하게 날짜 범위로 조회)
+    @Transactional(readOnly = true)
+    public List<WeatherDailyLog> getRecentDailyLog(int days) {
+        java.time.LocalDate today = java.time.LocalDate.now();
+        return weatherDailyLogMapper.findByMonth(today.minusDays(days - 1L), today);
+    }
+
+    // 날짜 클릭 상세보기에서 관리자가 남긴 메모(작업 중지 여부 등)를 저장한다.
+    @Transactional
+    public void saveDailyMemo(java.time.LocalDate date, String memo) {
+        weatherDailyLogMapper.updateMemo(date, memo);
     }
 
     /** 인증키가 설정된 경우 기상청 API허브의 관측·예보를 우선 사용한다. */
@@ -77,17 +145,63 @@ public class WeatherService {
         }
         String temperature = observed.getOrDefault("T1H", "-");
         String precipitation = observed.getOrDefault("RN1", "-");
-        return new WeatherStatus(
+
+        List<Map<String, Object>> vilageItems = fetchVilageFcstItems();
+        List<ForecastPoint> dailyForecast = extractDailyForecast(vilageItems);
+        double minTemperature = extractMinTemperature(vilageItems, parseDouble(temperature));
+        double snowfall = extractSnowfall(vilageItems);
+        Double maxTemperature = extractTodayMax(vilageItems);
+
+        String ruleBasedRisk = calculateRiskLevel(temperature, precipitation, alerts);
+        String aiRisk = callRiskModel(parseDouble(temperature), minTemperature, parseDouble(precipitation), snowfall);
+
+        WeatherStatus status = new WeatherStatus(
                 temperature,
                 precipitation,
                 readAsosTemperature(),
                 alerts,
                 readHourlyForecast(),
-                readDailyForecast(),
-                calculateRiskLevel(temperature, precipitation, alerts),
+                dailyForecast,
+                aiRisk != null ? aiRisk : ruleBasedRisk,
                 "기상청 API허브",
                 LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")),
                 "기상청 실시간 관측 및 예보 데이터입니다.");
+
+        logDailySnapshot(status, maxTemperature, minTemperature, snowfall, alerts);
+        return status;
+    }
+
+    // AI 위험도 모델(risk_model.pkl) 호출. 서버가 꺼져있거나 실패하면 null을 반환해 규칙 기반으로 대체한다.
+    private String callRiskModel(double temperature, double minTemperature, double precipitation, double snowfall) {
+        if (riskApiUrl == null || riskApiUrl.isBlank()) return null;
+        try {
+            String json = String.format(Locale.US,
+                    "{\"temperature\":%.1f,\"min_temperature\":%.1f,\"precipitation\":%.1f,\"snowfall\":%.1f}",
+                    temperature, minTemperature, precipitation, snowfall);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(riskApiUrl))
+                    .timeout(Duration.ofSeconds(5))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(json, StandardCharsets.UTF_8))
+                    .build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) return null;
+
+            Map<String, Object> body = JsonParserFactory.getJsonParser().parseMap(response.body());
+            if (!Boolean.TRUE.equals(body.get("success"))) return null;
+            return mapRiskLevel(String.valueOf(body.get("riskLevel")));
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String mapRiskLevel(String level) {
+        return switch (level) {
+            case "DANGER" -> "위험";
+            case "CAUTION" -> "주의";
+            case "SAFE" -> "안전";
+            default -> null;
+        };
     }
 
     /**
@@ -101,7 +215,7 @@ public class WeatherService {
                     + "&longitude=" + longitude
                     + "&current=temperature_2m,precipitation"
                     + "&hourly=temperature_2m&daily=temperature_2m_max"
-                    + "&forecast_hours=12&forecast_days=5&timezone=Asia%2FSeoul";
+                    + "&forecast_hours=12&forecast_days=5&timezone=Asia/Seoul";
             Map<String, Object> response = restClient.get().uri(uri).retrieve().body(Map.class);
             Map<String, Object> current = (Map<String, Object>) response.get("current");
             Map<String, Object> hourly = (Map<String, Object>) response.get("hourly");
@@ -117,9 +231,11 @@ public class WeatherService {
                     ? "기상청 인증키가 설정되지 않아 공개 실시간 날씨 데이터로 표시합니다."
                     : "기상청 API 연결 실패로 공개 실시간 날씨 데이터로 대체했습니다.";
 
-            return new WeatherStatus(temperature, precipitation, temperature, List.of(),
+            WeatherStatus status = new WeatherStatus(temperature, precipitation, temperature, List.of(),
                     hourlyPoints, dailyPoints, calculateRiskLevel(temperature, precipitation, List.of()),
                     "Open-Meteo 실시간", observedAt, message);
+            logDailySnapshot(status, null, null, null, List.of());
+            return status;
         } catch (Exception e) {
             return new WeatherStatus("-", "-", "-", List.of(), List.of(), List.of(), "확인 필요",
                     "연결 실패", "-", "실시간 날씨 서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.");
@@ -317,9 +433,9 @@ public class WeatherService {
         }
     }
 
-    // 단기예보조회: 앞으로 며칠간의 일별 최고기온(TMX) 예보를 반환한다.
+    // 단기예보조회: 최고기온(TMX)·최저기온(TMN)·적설(SNO)이 모두 이 응답 하나에 들어있어 한 번만 호출한다.
     @SuppressWarnings("unchecked")
-    private List<ForecastPoint> readDailyForecast() {
+    private List<Map<String, Object>> fetchVilageFcstItems() {
         LocalDateTime now = LocalDateTime.now();
         String baseDate = now.format(DATE_FORMAT);
         String baseTime = now.getHour() < 5 ? "0200" : "0500";
@@ -334,19 +450,59 @@ public class WeatherService {
 
             Map<String, Object> body = (Map<String, Object>) navigate(response, "response", "body");
             List<Map<String, Object>> items = (List<Map<String, Object>>) navigate(body, "items", "item");
-            if (items == null) return List.of();
-
-            List<ForecastPoint> points = new ArrayList<>();
-            for (Map<String, Object> item : items) {
-                if (!"TMX".equals(item.get("category"))) continue;
-                String fcstDate = String.valueOf(item.get("fcstDate"));
-                points.add(new ForecastPoint(fcstDate.substring(4, 6) + "/" + fcstDate.substring(6, 8),
-                        String.valueOf(item.get("fcstValue"))));
-            }
-            return points;
+            return items == null ? List.of() : items;
         } catch (Exception e) {
             return List.of();
         }
+    }
+
+    // 앞으로 며칠간의 일별 최고기온(TMX) 예보
+    private List<ForecastPoint> extractDailyForecast(List<Map<String, Object>> items) {
+        List<ForecastPoint> points = new ArrayList<>();
+        for (Map<String, Object> item : items) {
+            if (!"TMX".equals(item.get("category"))) continue;
+            String fcstDate = String.valueOf(item.get("fcstDate"));
+            points.add(new ForecastPoint(fcstDate.substring(4, 6) + "/" + fcstDate.substring(6, 8),
+                    String.valueOf(item.get("fcstValue"))));
+        }
+        return points;
+    }
+
+    // 오늘의 최저기온(TMN) 예보. 값이 없으면(발표 시간대가 아니면) 현재 관측 기온으로 대체한다.
+    private double extractMinTemperature(List<Map<String, Object>> items, double fallback) {
+        for (Map<String, Object> item : items) {
+            if ("TMN".equals(item.get("category"))) {
+                return parseDouble(String.valueOf(item.get("fcstValue")));
+            }
+        }
+        return fallback;
+    }
+
+    // 오늘 날짜의 최고기온(TMX) 예보. 여러 날짜의 TMX가 섞여 있으므로 fcstDate가 오늘인 것만 찾는다.
+    private Double extractTodayMax(List<Map<String, Object>> items) {
+        String today = LocalDateTime.now().format(DATE_FORMAT);
+        for (Map<String, Object> item : items) {
+            if ("TMX".equals(item.get("category")) && today.equals(String.valueOf(item.get("fcstDate")))) {
+                return parseDouble(String.valueOf(item.get("fcstValue")));
+            }
+        }
+        return null;
+    }
+
+    // 앞으로 몇 시간 내 적설(SNO) 예보 중 최댓값(cm). "적설없음" 등은 0으로 처리한다.
+    private double extractSnowfall(List<Map<String, Object>> items) {
+        double max = 0;
+        for (Map<String, Object> item : items) {
+            if (!"SNO".equals(item.get("category"))) continue;
+            String raw = String.valueOf(item.get("fcstValue"));
+            if (raw == null || raw.contains("없음")) continue;
+            try {
+                max = Math.max(max, Double.parseDouble(raw.replaceAll("[^0-9.]", "")));
+            } catch (NumberFormatException ignored) {
+                // 숫자로 해석 안 되는 값은 무시
+            }
+        }
+        return max;
     }
 
     // ASOS 시간자료: 종관기상관측 지점의 실측 기온을 교차 확인용으로 조회한다.

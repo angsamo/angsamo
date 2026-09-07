@@ -18,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.angsamo.erp.safety.domain.SafetyCheckItem;
 import com.angsamo.erp.safety.domain.SafetyChecklist;
 import com.angsamo.erp.safety.dto.HelmetDetectionResult;
+import com.angsamo.erp.safety.dto.SafetyChecklistSummary;
 import com.angsamo.erp.safety.mapper.SafetyChecklistMapper;
 
 @Service
@@ -37,6 +38,11 @@ public class SafetyChecklistService {
     @Transactional(readOnly = true)
     public List<SafetyChecklist> getChecklists() {
         return mapper.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public SafetyChecklistSummary getDashboardSummary() {
+        return mapper.getDashboardSummary();
     }
 
     @Transactional(readOnly = true)

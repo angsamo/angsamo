@@ -50,3 +50,4 @@ python-services/**/__pycache__/
 
 # 안전모 점검 업로드 사진 (런타임 데이터, 개인정보 포함 가능)
 uploads/
+python-services/**/cctv_logs/
