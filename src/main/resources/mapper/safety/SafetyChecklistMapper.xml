@@ -70,6 +70,21 @@
         DELETE FROM safety_check_item WHERE item_id = #{itemId}
     </delete>
 
+    <select id="getDashboardSummary" resultType="com.angsamo.erp.safety.dto.SafetyChecklistSummary">
+        SELECT
+            (SELECT COUNT(*) FROM safety_checklist
+                WHERE check_date >= DATE_FORMAT(CURDATE(), '%Y-%m-01')) AS monthly_checklist_count,
+            (SELECT COUNT(*) FROM safety_checklist WHERE check_date = CURDATE()) AS today_checklist_count,
+            (SELECT COUNT(*) FROM safety_check_item i
+                JOIN safety_checklist c ON c.checklist_id = i.checklist_id
+                WHERE c.check_date >= DATE_FORMAT(CURDATE(), '%Y-%m-01')) AS monthly_item_count,
+            (SELECT COUNT(*) FROM safety_check_item i
+                JOIN safety_checklist c ON c.checklist_id = i.checklist_id
+                WHERE c.check_date >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+                  AND (i.helmet_worn = 0 OR i.chin_strap_fastened = 0 OR i.is_damaged = 1 OR i.is_expired = 1)
+            ) AS monthly_fail_count
+    </select>
+
     <select id="findRecentViolationItems" resultType="com.angsamo.erp.safety.domain.SafetyCheckItem">
         SELECT
             i.item_id, i.checklist_id, i.media_path, i.helmet_worn, i.chin_strap_fastened,

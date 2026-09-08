@@ -23,6 +23,15 @@
         .cctv-video-wrap { margin-bottom: 14px; background: #10151c; border-radius: 8px; overflow: hidden; min-height: 320px; display: flex; align-items: center; justify-content: center; }
         .cctv-video-wrap img { width: 100%; max-height: 480px; object-fit: contain; display: block; }
         .cctv-video-wrap .placeholder { color: #7c8798; font-size: 13px; padding: 40px; text-align: center; }
+        .cctv-log-list { list-style: none; margin: 0; padding: 0; max-height: 420px; overflow-y: auto; }
+        .cctv-log-list li { display: flex; align-items: center; gap: 12px; padding: 10px 4px; border-bottom: 1px solid var(--border); font-size: 13px; }
+        .cctv-log-list li:last-child { border-bottom: none; }
+        .cctv-log-list img { width: 64px; height: 64px; object-fit: cover; border-radius: 6px; background: #eef2f7; cursor: pointer; flex-shrink: 0; }
+        .cctv-log-time { color: var(--muted); font-size: 12px; width: 150px; flex-shrink: 0; }
+        .cctv-log-empty { padding: 16px; color: var(--muted); text-align: center; font-size: 13px; }
+        .cctv-log-zoom-overlay { display: none; position: fixed; inset: 0; background: rgba(20,30,45,.6); z-index: 1000; align-items: center; justify-content: center; }
+        .cctv-log-zoom-overlay.open { display: flex; }
+        .cctv-log-zoom-overlay img { max-width: 90vw; max-height: 90vh; border-radius: 8px; }
     </style>
 </head>
 <body>
@@ -62,7 +71,17 @@
             </div>
             <div id="cctvResult" class="cctv-result" style="display:none;"></div>
         </section>
+
+        <section class="panel table-panel">
+            <div class="panel-header"><div><p class="eyebrow">LOG</p><h2>탐지 이력</h2></div></div>
+            <ul id="cctvLogList" class="cctv-log-list"></ul>
+            <p id="cctvLogEmpty" class="cctv-log-empty">아직 탐지 기록이 없습니다. 탐지를 시작하면 여기에 쌓입니다.</p>
+        </section>
     </main>
+</div>
+
+<div class="cctv-log-zoom-overlay" id="cctvZoomOverlay" onclick="this.classList.remove('open');">
+    <img id="cctvZoomImg" alt="탐지 스냅샷 확대">
 </div>
 <script src="${pageContext.request.contextPath}/resources/js/common.js"></script>
 <script>
@@ -103,10 +122,41 @@
                 } else {
                     resultBox.style.display = 'none';
                 }
+
+                renderLog(data.history);
             }).catch(function () {
                 statusText.textContent = 'AI 서버 상태를 확인할 수 없습니다.';
             });
         }
+
+        var logList = document.getElementById('cctvLogList');
+        var logEmpty = document.getElementById('cctvLogEmpty');
+        var apiBaseUrl = '${cctvApiBaseUrl}';
+        var zoomOverlay = document.getElementById('cctvZoomOverlay');
+        var zoomImg = document.getElementById('cctvZoomImg');
+
+        function renderLog(history) {
+            if (!history || !history.length) {
+                logList.innerHTML = '';
+                logEmpty.style.display = 'block';
+                return;
+            }
+            logEmpty.style.display = 'none';
+            logList.innerHTML = history.map(function (h) {
+                var badgeClass = h.helmetWorn === true ? 'enabled' : (h.helmetWorn === false ? 'disabled' : '');
+                var badgeText = h.helmetWorn === true ? '착용' : (h.helmetWorn === false ? '미착용' : '판정불가');
+                var imgSrc = h.image ? apiBaseUrl + h.image : '';
+                var thumb = imgSrc ? '<img src="' + imgSrc + '" alt="스냅샷" onclick="showZoom(\'' + imgSrc + '\')">' : '';
+                return '<li>' + thumb + '<span class="cctv-log-time">' + (h.checkedAt || '-') + '</span>'
+                    + '<span class="state-badge ' + badgeClass + '">' + badgeText + '</span>'
+                    + '<span>' + (h.message || '') + '</span></li>';
+            }).join('');
+        }
+
+        window.showZoom = function (src) {
+            zoomImg.src = src;
+            zoomOverlay.classList.add('open');
+        };
 
         refresh();
         setInterval(refresh, 5000);

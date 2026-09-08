@@ -1,5 +1,6 @@
 package com.angsamo.erp.safety.service;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -46,6 +47,10 @@ public class CctvService {
         return apiBaseUrl + "/cctv/stream";
     }
 
+    public String getApiBaseUrl() {
+        return apiBaseUrl;
+    }
+
     public void stop() {
         try {
             restClient.post()
@@ -65,16 +70,17 @@ public class CctvService {
                     .retrieve()
                     .body(Map.class);
             if (response == null) {
-                return new CctvStatus(false, null, null, null, "서버 응답이 없습니다.");
+                return new CctvStatus(false, null, null, null, "서버 응답이 없습니다.", List.of());
             }
             return new CctvStatus(
                     Boolean.TRUE.equals(response.get("running")),
                     (String) response.get("startedAt"),
                     (String) response.get("lastCheckedAt"),
                     (Map<String, Object>) response.get("lastResult"),
-                    (String) response.get("error"));
+                    (String) response.get("error"),
+                    (List<Map<String, Object>>) (List<?>) response.getOrDefault("history", List.of()));
         } catch (Exception e) {
-            return new CctvStatus(false, null, null, null, "AI 서버에 연결할 수 없습니다.");
+            return new CctvStatus(false, null, null, null, "AI 서버에 연결할 수 없습니다.", List.of());
         }
     }
 }
